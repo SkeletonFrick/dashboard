@@ -1,3 +1,5 @@
+# backend/routers/achats.py — fichier complet corrigé
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from typing import Optional
 import aiosqlite
@@ -19,13 +21,10 @@ logger = logging.getLogger(__name__)
 async def _get_achat_or_404(db: aiosqlite.Connection, achat_id: int) -> dict:
     async with db.execute(
         """
-        SELECT a.*, f.nom as fournisseur_nom,
-               c.nom as categorie_nom,
-               p.nom as plateforme_nom
+        SELECT a.*,
+               f.nom AS fournisseur_nom
         FROM achats a
         LEFT JOIN fournisseurs f ON f.id = a.fournisseur_id
-        LEFT JOIN categories c ON c.id = a.categorie_id
-        LEFT JOIN plateformes p ON p.id = a.plateforme_id
         WHERE a.id = ?
         """,
         (achat_id,),
@@ -38,14 +37,17 @@ async def _get_achat_or_404(db: aiosqlite.Connection, achat_id: int) -> dict:
 
 async def _log(db, user_id, action, entite_id, details=""):
     await db.execute(
-        "INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)"
-        " VALUES (?, ?, 'achat', ?, ?)",
+        """
+        INSERT INTO logs
+            (utilisateur_id, action, entite, entite_id, details)
+        VALUES (?, ?, 'achat', ?, ?)
+        """,
         (user_id, action, entite_id, details),
     )
 
 
 # ─────────────────────────────────────────────
-# ACHATS — LISTE & DÉTAIL
+# LISTE
 # ─────────────────────────────────────────────
 
 @router.get("")
@@ -79,13 +81,9 @@ async def list_achats(
 
     async with db.execute(
         f"""
-        SELECT a.*, f.nom as fournisseur_nom,
-               c.nom as categorie_nom,
-               p.nom as plateforme_nom
+        SELECT a.*, f.nom AS fournisseur_nom
         FROM achats a
         LEFT JOIN fournisseurs f ON f.id = a.fournisseur_id
-        LEFT JOIN categories c ON c.id = a.categorie_id
-        LEFT JOIN plateformes p ON p.id = a.plateforme_id
         WHERE {where}
         ORDER BY a.date DESC, a.id DESC
         LIMIT ? OFFSET ?
@@ -95,16 +93,17 @@ async def list_achats(
         rows = [dict(r) for r in await cur.fetchall()]
 
     async with db.execute(
-        f"""
-        SELECT COUNT(*) FROM achats a
-        WHERE {where}
-        """,
+        f"SELECT COUNT(*) FROM achats a WHERE {where}",
         params,
     ) as cur:
         total = (await cur.fetchone())[0]
 
     return {"items": rows, "total": total, "limit": limit, "offset": offset}
 
+
+# ─────────────────────────────────────────────
+# DÉTAIL
+# ─────────────────────────────────────────────
 
 @router.get("/{achat_id}")
 async def get_achat(
@@ -114,14 +113,12 @@ async def get_achat(
 ):
     achat = await _get_achat_or_404(db, achat_id)
 
-    # Fichiers joints
     async with db.execute(
         "SELECT * FROM fichiers WHERE type_parent = 'achat' AND parent_id = ?",
         (achat_id,),
     ) as cur:
         achat["fichiers"] = [dict(r) for r in await cur.fetchall()]
 
-    # Si lot, récupère les éléments
     if achat.get("lot_id"):
         async with db.execute(
             "SELECT * FROM lot_elements WHERE lot_id = ?",
@@ -133,7 +130,7 @@ async def get_achat(
 
 
 # ─────────────────────────────────────────────
-# ACHATS — CRÉATION
+# CRÉATION
 # ─────────────────────────────────────────────
 
 @router.post("", status_code=201)
@@ -145,19 +142,21 @@ async def create_achat(
     async with db.execute(
         """
         INSERT INTO achats
-          (date, nom, type_achat, categorie_id, plateforme_id, prix, qte,
-           fournisseur_id, lot_id, ajout_stock_auto, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (date, nom, type_achat, categorie, plateforme,
+             fournisseur_id, prix_achat, quantite,
+             est_lot, lot_id, ajout_stock_auto, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             payload.date,
             payload.nom,
             payload.type_achat,
-            payload.categorie_id,
-            payload.plateforme_id,
-            payload.prix,
-            payload.qte,
+            payload.categorie,
+            payload.plateforme,
             payload.fournisseur_id,
+            payload.prix_achat,
+            payload.quantite,
+            payload.est_lot,
             payload.lot_id,
             payload.ajout_stock_auto,
             payload.notes,
@@ -167,7 +166,6 @@ async def create_achat(
 
     await db.commit()
 
-    # Intégration stock automatique
     if payload.type_achat == "piece" and payload.ajout_stock_auto:
         await integrer_achat_stock(db, achat_id, current_user["id"])
         await db.commit()
@@ -179,7 +177,7 @@ async def create_achat(
 
 
 # ─────────────────────────────────────────────
-# ACHATS — MISE À JOUR
+# MISE À JOUR
 # ─────────────────────────────────────────────
 
 @router.put("/{achat_id}")
@@ -191,14 +189,20 @@ async def update_achat(
 ):
     await _get_achat_or_404(db, achat_id)
 
-    fields = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
+    fields = payload.model_dump(exclude_unset=True)
     if not fields:
         raise HTTPException(status_code=422, detail="Aucun champ à mettre à jour")
 
-    set_clause = ", ".join(f"{k} = ?" for k in fields)
+    fields["updated_at"] = "datetime('now')"
+    set_clause = ", ".join(
+        f"{k} = datetime('now')" if v == "datetime('now')" else f"{k} = ?"
+        for k, v in fields.items()
+    )
+    values = [v for v in fields.values() if v != "datetime('now')"]
+
     await db.execute(
         f"UPDATE achats SET {set_clause} WHERE id = ?",
-        list(fields.values()) + [achat_id],
+        values + [achat_id],
     )
     await _log(db, current_user["id"], "update", achat_id, str(fields))
     await db.commit()
@@ -207,7 +211,7 @@ async def update_achat(
 
 
 # ─────────────────────────────────────────────
-# ACHATS — SUPPRESSION
+# SUPPRESSION
 # ─────────────────────────────────────────────
 
 @router.delete("/{achat_id}", status_code=204)
@@ -218,7 +222,6 @@ async def delete_achat(
 ):
     achat = await _get_achat_or_404(db, achat_id)
 
-    # Supprime fichiers physiques
     async with db.execute(
         "SELECT chemin FROM fichiers WHERE type_parent = 'achat' AND parent_id = ?",
         (achat_id,),
@@ -236,7 +239,7 @@ async def delete_achat(
 
 
 # ─────────────────────────────────────────────
-# ACHATS — INTÉGRATION MANUELLE AU STOCK
+# INTÉGRATION MANUELLE STOCK
 # ─────────────────────────────────────────────
 
 @router.post("/{achat_id}/integrer-stock")
@@ -259,7 +262,7 @@ async def integrer_stock(
 
 
 # ─────────────────────────────────────────────
-# ACHATS — UPLOAD FICHIERS
+# FICHIERS
 # ─────────────────────────────────────────────
 
 @router.post("/{achat_id}/fichiers", status_code=201)
@@ -276,10 +279,18 @@ async def upload_fichier(
     async with db.execute(
         """
         INSERT INTO fichiers
-          (type_parent, parent_id, nom_original, chemin, mime_type, categorie)
-        VALUES ('achat', ?, ?, ?, ?, ?)
+            (type_parent, parent_id, nom_original, chemin,
+             mime_type, taille, categorie)
+        VALUES ('achat', ?, ?, ?, ?, ?, ?)
         """,
-        (achat_id, saved["nom_original"], saved["chemin"], saved["mime_type"], categorie),
+        (
+            achat_id,
+            saved["nom_original"],
+            saved["chemin"],
+            saved["mime_type"],
+            saved.get("taille", 0),
+            categorie,
+        ),
     ) as cur:
         fichier_id = cur.lastrowid
 
@@ -295,7 +306,10 @@ async def delete_fichier(
     current_user: dict = Depends(get_current_user),
 ):
     async with db.execute(
-        "SELECT chemin FROM fichiers WHERE id = ? AND parent_id = ? AND type_parent = 'achat'",
+        """
+        SELECT chemin FROM fichiers
+        WHERE id = ? AND parent_id = ? AND type_parent = 'achat'
+        """,
         (fichier_id, achat_id),
     ) as cur:
         row = await cur.fetchone()
@@ -319,8 +333,8 @@ async def list_lots(
     async with db.execute(
         """
         SELECT l.*,
-               COUNT(le.id) as nb_elements,
-               SUM(le.prix_attribue) as total_attribue
+               COUNT(le.id)          AS nb_elements,
+               SUM(le.prix_attribue) AS total_attribue
         FROM lots_achat l
         LEFT JOIN lot_elements le ON le.lot_id = l.id
         GROUP BY l.id
@@ -337,9 +351,18 @@ async def create_lot(
     current_user: dict = Depends(get_current_user),
 ):
     async with db.execute(
-        "INSERT INTO lots_achat (date, nom_lot, prix_total, plateforme_id, notes)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (payload.date, payload.nom_lot, payload.prix_total, payload.plateforme_id, payload.notes),
+        """
+        INSERT INTO lots_achat
+            (date, nom_lot, prix_total, plateforme, notes)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            payload.date,
+            payload.nom_lot,
+            payload.prix_total,
+            payload.plateforme,
+            payload.notes,
+        ),
     ) as cur:
         lot_id = cur.lastrowid
 
@@ -361,12 +384,7 @@ async def get_lot(
         raise HTTPException(status_code=404, detail="Lot introuvable")
 
     async with db.execute(
-        """
-        SELECT le.*, a.id as achat_id
-        FROM lot_elements le
-        LEFT JOIN achats a ON a.lot_id = le.lot_id AND a.nom = le.nom
-        WHERE le.lot_id = ?
-        """,
+        "SELECT * FROM lot_elements WHERE lot_id = ?",
         (lot_id,),
     ) as cur:
         elements = [dict(r) for r in await cur.fetchall()]
@@ -381,7 +399,6 @@ async def add_lot_element(
     db: aiosqlite.Connection = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    # Vérifie cohérence somme prix
     async with db.execute(
         "SELECT prix_total FROM lots_achat WHERE id = ?", (lot_id,)
     ) as cur:
@@ -404,10 +421,16 @@ async def add_lot_element(
     async with db.execute(
         """
         INSERT INTO lot_elements
-          (lot_id, type_element, nom, prix_attribue, destination)
+            (lot_id, type_element, nom, prix_attribue, destination)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (lot_id, payload.type_element, payload.nom, payload.prix_attribue, payload.destination),
+        (
+            lot_id,
+            payload.type_element,
+            payload.nom,
+            payload.prix_attribue,
+            payload.destination,
+        ),
     ) as cur:
         elem_id = cur.lastrowid
 

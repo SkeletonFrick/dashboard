@@ -8,6 +8,7 @@ from backend.auth import (
     get_current_user,
     hash_password,
     verify_password,
+    require_role
 )
 from backend.database import DB_PATH
 from backend.models import UserCreate, UserLogin, UserOut
@@ -34,7 +35,7 @@ async def login(payload: UserLogin):
     # Mise à jour last_login
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "UPDATE utilisateurs SET last_login = ? WHERE id = ?",
+            "UPDATE utilisateurs SET last_login_at = ? WHERE id = ?",
             (datetime.now(timezone.utc).isoformat(), user["id"]),
         )
         await db.commit()
@@ -56,7 +57,7 @@ async def me(user=Depends(get_current_user)):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT id, username, role, last_login FROM utilisateurs WHERE id = ?",
+            "SELECT id, username, role, last_login_at FROM utilisateurs WHERE id = ?",
             (user["id"],),
         ) as cur:
             row = await cur.fetchone()
@@ -70,9 +71,7 @@ async def me(user=Depends(get_current_user)):
 @router.post("/users", response_model=UserOut)
 async def create_user(
     payload: UserCreate,
-    _admin=Depends(require_admin := __import__(
-        "backend.auth", fromlist=["require_role"]
-    ).require_role("admin")),
+    _admin=Depends(require_role("admin")),
 ):
     """Création d'un utilisateur (admin uniquement)."""
     async with aiosqlite.connect(DB_PATH) as db:

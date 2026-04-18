@@ -7,7 +7,7 @@ import {
   tableLoading,
   tableEmpty,
   confirmAction,
-  escHtml,
+  escHtml,          // ✅ ajouter ici
 } from "./app.js";
 
 requireAuth();

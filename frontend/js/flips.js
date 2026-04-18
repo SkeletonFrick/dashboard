@@ -7,6 +7,7 @@ import {
   tableLoading,
   tableEmpty,
   confirmAction,
+  escHtml
 } from "./app.js";
 
 requireAuth();
@@ -448,13 +449,6 @@ window.resetFilters = function () {
 };
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
-function escHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 // Expose l'achat lié → masque champ prix manuel
 el("fAchatId").addEventListener("change", function () {

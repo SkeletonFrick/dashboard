@@ -331,6 +331,104 @@ async def _create_tables(db):
 async def _seed_default_data(db):
     """Insère les données par défaut si absentes."""
 
+    params_defaut = [
+        ("urssaf_pct", "0.246"),
+        ("reinvest_pct", "0.30"),
+        ("perso_pct", "0.454"),
+        ("objectif_mensuel", "1000"),       # ✅ était "objectif_marge"
+        ("garantie_mois", "3"),
+        ("seuil_alerte_multiplicateur", "1.25"),
+        ("notifications_actives", "0"),
+        ("notification_canal", ""),
+        ("notification_destinataire", ""),
+        ("societe_nom", "AQ Réparation"),
+        ("societe_telephone", ""),
+        ("societe_email", ""),
+        ("societe_adresse", ""),
+        ("societe_siret", ""),              # ✅ manquait, utilisé dans recu
+        ("telegram_bot_token", ""),         # ✅ manquait, utilisé dans parametres
+        ("telegram_chat_id", ""),           # ✅ manquait
+        ("free_mobile_user", ""),           # ✅ manquait
+        ("free_mobile_pass", ""),           # ✅ manquait
+    ]
+    for cle, valeur in params_defaut:
+        await db.execute(
+            "INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)",
+            (cle, valeur),
+        )
+
+    # Catégories par défaut — inchangées
+    categories_defaut = [
+        ("achat", "Smartphone"),
+        ("achat", "Tablette"),
+        ("achat", "PC portable"),
+        ("achat", "Console"),
+        ("achat", "Accessoire"),
+        ("achat", "Pièce détachée"),
+        ("achat", "Matériel atelier"),
+        ("achat", "Autre"),
+        ("vente", "Smartphone"),
+        ("vente", "Tablette"),
+        ("vente", "PC portable"),
+        ("vente", "Console"),
+        ("vente", "Accessoire"),
+        ("vente", "Autre"),
+        ("stock", "Écran"),
+        ("stock", "Batterie"),
+        ("stock", "Connecteur"),
+        ("stock", "Nappe"),
+        ("stock", "Vitre"),
+        ("stock", "Châssis"),
+        ("stock", "Autre"),
+    ]
+    for i, (type_cat, nom) in enumerate(categories_defaut):
+        await db.execute(
+            "INSERT OR IGNORE INTO categories (type, nom, ordre) VALUES (?, ?, ?)",
+            (type_cat, nom, i),
+        )
+
+    # Plateformes par défaut — inchangées
+    plateformes_defaut = [
+        ("achat", "eBay"),
+        ("achat", "Vinted"),
+        ("achat", "LeBonCoin"),
+        ("achat", "AliExpress"),
+        ("achat", "Amazon"),
+        ("achat", "Rakuten"),
+        ("achat", "Fournisseur direct"),
+        ("achat", "Autre"),
+        ("vente", "eBay"),
+        ("vente", "Vinted"),
+        ("vente", "LeBonCoin"),
+        ("vente", "Rakuten"),
+        ("vente", "Remise en main propre"),
+        ("vente", "Autre"),
+    ]
+    for i, (type_pf, nom) in enumerate(plateformes_defaut):
+        await db.execute(
+            "INSERT OR IGNORE INTO plateformes (type, nom, ordre) VALUES (?, ?, ?)",
+            (type_pf, nom, i),
+        )
+
+    # Création admin par défaut
+    async with db.execute("SELECT COUNT(*) FROM utilisateurs") as cur:
+        count = (await cur.fetchone())[0]
+
+    if count == 0:
+        from backend.auth import hash_password
+
+        await db.execute(
+            """
+            INSERT INTO utilisateurs (username, password_hash, role, actif)
+            VALUES ('admin', ?, 'admin', 1)
+            """,
+            (hash_password("admin"),),
+        )
+        print("✅ Utilisateur admin créé (mot de passe : admin) — changez-le !")
+
+    await db.commit()
+    """Insère les données par défaut si absentes."""
+
     # Paramètres par défaut
     params_defaut = [
         ("urssaf_pct", "0.246"),

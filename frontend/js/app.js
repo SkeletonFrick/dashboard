@@ -1,4 +1,4 @@
-// ── Helpers globaux ────────────────────────────────────────────────────────
+// frontend/js/app.js — fichier complet corrigé
 
 /**
  * fetch authentifié — redirige vers login si 401
@@ -6,7 +6,7 @@
  * @param {RequestInit} options
  */
 async function apiFetch(url, options = {}) {
-  const { authFetch, getToken, clearToken } = await import("./auth.js");
+  const { getToken, clearToken } = await import("./auth.js");
   const { headers: extraHeaders = {}, body, ...rest } = options;
 
   const headers = {
@@ -55,7 +55,7 @@ function showToast(message, type = "info", duration = 3500) {
     info: "alert-info",
   };
   alert.className = `alert ${colorMap[type] ?? "alert-info"} shadow-lg text-sm`;
-  alert.innerHTML = `<span>${message}</span>`;
+  alert.innerHTML = `<span>${escHtml(message)}</span>`;
   container.appendChild(alert);
 
   setTimeout(() => alert.remove(), duration);
@@ -79,17 +79,32 @@ function formatEur(value) {
 function formatDate(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("fr-FR");
+}
+
+/**
+ * Formate une taille en octets lisible
+ * @param {number} bytes
+ */
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 /**
  * Retourne un badge DaisyUI coloré selon statut
  * @param {string} statut
- * @param {Record<string, string>} map  ex: { vendu: 'badge-success' }
+ * @param {Record<string, string>} colorMap   ex: { vendu: 'badge-success' }
+ * @param {Record<string, string>} labelMap   ex: { vendu: 'Vendu' }
  */
-function statutBadge(statut, map = {}) {
-  const cls = map[statut] ?? "badge-ghost";
-  return `<span class="badge ${cls} badge-sm">${statut.replace(/_/g, " ")}</span>`;
+function statutBadge(statut, colorMap = {}, labelMap = {}) {
+  const cls = colorMap[statut] ?? "badge-ghost";
+  const label = labelMap[statut] ?? statut.replace(/_/g, " ");
+  return `<span class="badge ${cls} badge-sm">${escHtml(label)}</span>`;
 }
 
 /**
@@ -116,7 +131,7 @@ function tableEmpty(tbody, colspan = 5, message = "Aucun résultat") {
   tbody.innerHTML = `
     <tr>
       <td colspan="${colspan}" class="text-center py-8 text-base-content/40">
-        ${message}
+        ${escHtml(message)}
       </td>
     </tr>`;
 }
@@ -129,13 +144,28 @@ function confirmAction(message = "Confirmer cette action ?") {
   return window.confirm(message);
 }
 
+/**
+ * Sanitise une chaîne pour injection HTML
+ * @param {string} str
+ */
+function escHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export {
   apiFetch,
   showToast,
   formatEur,
   formatDate,
+  formatBytes,
   statutBadge,
   tableLoading,
   tableEmpty,
   confirmAction,
+  escHtml,
 };

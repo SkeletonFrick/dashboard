@@ -32,7 +32,8 @@
           >
             <path
               fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9v4h2V9H9zm0-4v2h2V5H9z"
+              d="M10 18a8 8 0 100-16 8 8 0 000
+                 16zm-1-9v4h2V9H9zm0-4v2h2V5H9z"
               clip-rule="evenodd"
             />
           </svg>
@@ -76,10 +77,11 @@
       </div>
     </div>
 
-    <script src="/js/auth.js"></script>
-    <script>
-      // Si déjà connecté → rediriger
-      if (localStorage.getItem("token")) {
+    <script type="module">
+      import { login, getToken } from "/js/auth.js";
+
+      // Si déjà connecté → rediriger immédiatement
+      if (getToken()) {
         window.location.replace("/index.html");
       }
 
@@ -87,27 +89,28 @@
         .getElementById("login-form")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+
           const btn = document.getElementById("submit-btn");
-          const alert = document.getElementById("alert");
+          const alertEl = document.getElementById("alert");
           const alertMsg = document.getElementById("alert-msg");
 
           btn.classList.add("loading");
           btn.disabled = true;
-          alert.classList.add("hidden");
+          alertEl.classList.add("hidden");
 
-          const ok = await login(
-            document.getElementById("username").value,
-            document.getElementById("password").value
-          );
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
 
-          if (!ok) {
+          const result = await login(username, password);
+
+          if (!result.ok) {
             alertMsg.textContent =
-              authError || "Identifiants invalides. Réessayez.";
-            alert.classList.remove("hidden");
+              result.error || "Identifiants invalides. Réessayez.";
+            alertEl.classList.remove("hidden");
             btn.classList.remove("loading");
             btn.disabled = false;
           }
-          // Si ok, auth.js redirige vers /index.html
+          // Si ok, login() redirige vers /index.html automatiquement
         });
     </script>
   </body>

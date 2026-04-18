@@ -1,3 +1,5 @@
+# backend/services/stock_service.py — fichier complet corrigé
+
 import aiosqlite
 from fastapi import HTTPException
 
@@ -9,10 +11,10 @@ async def integrer_achat_stock(
 ) -> dict:
     """
     Intègre un achat de type 'piece' dans le stock.
-    - Crée l'article si absent (recherche par nom + fournisseur)
+    - Cherche un article actif par nom + fournisseur_id
+    - Crée l'article si absent
     - Incrémente la quantité sinon
     - Trace un mouvement d'entrée
-    Retourne un dict avec stock_id et action effectuée.
     """
     async with db.execute(
         "SELECT * FROM achats WHERE id = ?", (achat_id,)
@@ -22,14 +24,16 @@ async def integrer_achat_stock(
     if not achat:
         raise HTTPException(status_code=404, detail="Achat introuvable")
     if achat["type_achat"] != "piece":
-        raise HTTPException(status_code=400, detail="Type d'achat non compatible")
+        raise HTTPException(
+            status_code=400, detail="Type d'achat non compatible"
+        )
 
     nom = achat["nom"]
     qte = achat["quantite"] or 1
     fournisseur_id = achat["fournisseur_id"]
 
-    # Cherche article existant (même nom, même fournisseur si renseigné)
-    query = "SELECT * FROM stock WHERE nom = ?"
+    # ✅ WHERE actif = 1 — on ignore les articles archivés
+    query = "SELECT * FROM stock WHERE nom = ? AND actif = 1"
     params: list = [nom]
     if fournisseur_id:
         query += " AND fournisseur_id = ?"
@@ -40,17 +44,23 @@ async def integrer_achat_stock(
 
     if article:
         stock_id = article["id"]
-        nouvelle_qte = article["quantite"] + qte
         await db.execute(
-            "UPDATE stock SET quantite = ? WHERE id = ?",
-            (nouvelle_qte, stock_id),
+            """
+            UPDATE stock
+            SET quantite   = quantite + ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+            """,
+            (qte, stock_id),
         )
         action = "incremented"
     else:
         async with db.execute(
             """
-            INSERT INTO stock (nom, quantite, stock_minimal, fournisseur_id)
-            VALUES (?, ?, 1, ?)
+            INSERT INTO stock
+                (nom, quantite, stock_minimal, fournisseur_id,
+                 unite, actif)
+            VALUES (?, ?, 1, ?, 'pcs', 1)
             """,
             (nom, qte, fournisseur_id),
         ) as cur:
@@ -61,13 +71,18 @@ async def integrer_achat_stock(
     await db.execute(
         """
         INSERT INTO stock_mouvements
-          (stock_id, type_mouvement, quantite, motif, reference_id, reference_type)
+            (stock_id, type_mouvement, quantite, motif,
+             reference_id, reference_type)
         VALUES (?, 'entree', ?, 'achat', ?, 'achat')
         """,
         (stock_id, qte, achat_id),
     )
 
-    return {"stock_id": stock_id, "action": action, "quantite_ajoutee": qte}
+    return {
+        "stock_id": stock_id,
+        "action": action,
+        "quantite_ajoutee": qte,
+    }
 
 
 async def decrementer_stock(
@@ -79,31 +94,43 @@ async def decrementer_stock(
 ) -> None:
     """
     Décrémente le stock et trace un mouvement de sortie.
-    Lève une erreur si stock insuffisant.
+    Lève HTTP 400 si stock insuffisant, HTTP 404 si article absent.
     """
     async with db.execute(
-        "SELECT quantite, nom FROM stock WHERE id = ?", (stock_id,)
+        "SELECT quantite, nom FROM stock WHERE id = ? AND actif = 1",
+        (stock_id,),
     ) as cur:
         article = await cur.fetchone()
 
     if not article:
-        raise HTTPException(status_code=404, detail=f"Article stock #{stock_id} introuvable")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Article stock #{stock_id} introuvable ou archivé",
+        )
 
     if article["quantite"] < quantite:
         raise HTTPException(
             status_code=400,
-            detail=f"Stock insuffisant pour '{article['nom']}' "
-                   f"(dispo: {article['quantite']}, demandé: {quantite})",
+            detail=(
+                f"Stock insuffisant pour '{article['nom']}' "
+                f"(dispo : {article['quantite']}, demandé : {quantite})"
+            ),
         )
 
     await db.execute(
-        "UPDATE stock SET quantite = quantite - ? WHERE id = ?",
+        """
+        UPDATE stock
+        SET quantite   = quantite - ?,
+            updated_at = datetime('now')
+        WHERE id = ?
+        """,
         (quantite, stock_id),
     )
     await db.execute(
         """
         INSERT INTO stock_mouvements
-          (stock_id, type_mouvement, quantite, motif, reference_id, reference_type)
+            (stock_id, type_mouvement, quantite, motif,
+             reference_id, reference_type)
         VALUES (?, 'sortie', ?, ?, ?, ?)
         """,
         (stock_id, quantite, reference_type, reference_id, reference_type),

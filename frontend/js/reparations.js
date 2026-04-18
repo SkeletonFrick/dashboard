@@ -109,6 +109,9 @@ async function loadReparations() {
   renderPagination();
 }
 
+// frontend/js/reparations.js
+// Remplacer uniquement la fonction renderTable()
+
 function renderTable(items) {
   const tbody = document.getElementById("reparations-tbody");
   if (!items.length) {

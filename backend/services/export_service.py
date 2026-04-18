@@ -1,61 +1,84 @@
+# backend/services/export_service.py
+
 import csv
 import json
 import io
 from datetime import datetime
-from typing import Dict, Any
 from fastapi.responses import StreamingResponse
-from backend.auth import get_current_user
-from backend.models import UserOut
+import aiosqlite
 
-async def export_json_complet(current_user: UserOut):
+from backend.database import DB_PATH
+
+
+async def export_json_complet(current_user: dict):
     """Export JSON complet de toutes les données"""
-    from backend.database import get_db
-    conn = await get_db()
-    
+
     tables = [
-        'utilisateurs', 'clients', 'fournisseurs', 'achats', 'ventes', 'flips', 
-        'reparations', 'stock', 'categories', 'plateformes', 'parametres', 
-        'charges_fixes', 'materiel'
+        "utilisateurs",
+        "clients",
+        "fournisseurs",
+        "achats",
+        "ventes",
+        "flips",
+        "reparations",
+        "stock",
+        "categories",
+        "plateformes",
+        "parametres",
+        "charges_fixes",
+        "materiel",
     ]
-    
+
     data = {}
-    for table in tables:
-        try:
-            result = await conn.execute(f"SELECT * FROM {table}")
-            rows = [dict(row) for row in result.fetchall()]
-            data[table] = rows
-        except:
-            data[table] = []
-    
-    content = json.dumps(data, indent=2, ensure_ascii=False).encode('utf-8')
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        for table in tables:
+            try:
+                async with conn.execute(f"SELECT * FROM {table}") as cur:
+                    rows = await cur.fetchall()
+                data[table] = [dict(r) for r in rows]
+            except Exception:
+                data[table] = []
+
+    content = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+    filename = f"aq_reparation_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
+
     return StreamingResponse(
         io.BytesIO(content),
         media_type="application/json",
-        headers={ "Content-Disposition": f"attachment; filename=aq_reparation_{datetime.now().strftime('%Y%m%d_%H%M')}.json" }
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
-async def export_csv_stock(current_user: UserOut):
+
+async def export_csv_stock(current_user: dict):
     """Export CSV stock avec alertes"""
-    from backend.database import get_db
-    conn = await get_db()
-    
+
     query = """
-    SELECT s.nom, s.categorie, s.quantite, s.stock_minimal, f.nom as fournisseur, 
-           CASE WHEN s.quantite <= s.stock_minimal THEN 'ALERTE' ELSE 'OK' END as alerte
-    FROM stock s LEFT JOIN fournisseurs f ON s.fournisseur_id = f.id 
-    WHERE s.actif = 1 ORDER BY s.quantite ASC
+        SELECT s.nom, s.categorie, s.quantite, s.stock_minimal,
+               f.nom as fournisseur,
+               CASE WHEN s.quantite <= s.stock_minimal THEN 'ALERTE' ELSE 'OK' END as alerte
+        FROM stock s
+        LEFT JOIN fournisseurs f ON s.fournisseur_id = f.id
+        WHERE s.actif = 1
+        ORDER BY s.quantite ASC
     """
-    
-    result = await conn.execute(query)
-    rows = result.fetchall()
-    
+
+    async with aiosqlite.connect(DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        async with conn.execute(query) as cur:
+            rows = await cur.fetchall()
+
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=['nom','categorie','quantite','stock_minimal','fournisseur','alerte'])
+    fieldnames = ["nom", "categorie", "quantite", "stock_minimal", "fournisseur", "alerte"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
     writer.writeheader()
-    writer.writerows([dict(row) for row in rows])
-    
+    writer.writerows([dict(r) for r in rows])
+
+    filename = f"stock_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+    content = output.getvalue().encode("utf-8-sig")  # BOM pour Excel
+
     return StreamingResponse(
-        io.BytesIO(output.getvalue().encode('utf-8-sig')),
+        io.BytesIO(content),
         media_type="text/csv",
-        headers={ "Content-Disposition": f"attachment; filename=stock_{datetime.now().strftime('%Y%m%d_%H%M')}.csv" }
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )

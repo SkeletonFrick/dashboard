@@ -21,7 +21,7 @@ class UserOut(BaseModel):
     role: str
     actif: bool
     created_at: str
-    last_login_at: Optional[str] = None
+    last_login_at: Optional[str] = None 
 
 
 # --- Paramètres ---
@@ -92,15 +92,18 @@ class FournisseurUpdate(BaseModel):
 
 # --- Achats ---
 
+# backend/models.py
+# Remplacer uniquement AchatCreate et AchatUpdate
+
 class AchatCreate(BaseModel):
     date: str
     nom: str
     type_achat: str = "autre"
-    categorie: Optional[str] = None
-    plateforme: Optional[str] = None
+    categorie: Optional[str] = None       # ✅ string, pas categorie_id
+    plateforme: Optional[str] = None      # ✅ string, pas plateforme_id
     fournisseur_id: Optional[int] = None
-    prix_achat: float = 0
-    quantite: int = 1
+    prix_achat: float = 0                 # ✅ était prix
+    quantite: int = 1                     # ✅ était qte
     est_lot: bool = False
     lot_id: Optional[int] = None
     ajout_stock_auto: bool = False
@@ -111,10 +114,10 @@ class AchatUpdate(BaseModel):
     date: Optional[str] = None
     nom: Optional[str] = None
     type_achat: Optional[str] = None
-    categorie: Optional[str] = None
-    plateforme: Optional[str] = None
-    prix_achat: Optional[float] = Field(default=None, ge=0)
-    quantite: Optional[int] = Field(default=None, ge=1)
+    categorie: Optional[str] = None       # ✅ string
+    plateforme: Optional[str] = None      # ✅ string
+    prix_achat: Optional[float] = Field(default=None, ge=0)  # ✅ était prix
+    quantite: Optional[int] = Field(default=None, ge=1)      # ✅ était qte
     fournisseur_id: Optional[int] = None
     lot_id: Optional[int] = None
     ajout_stock_auto: Optional[bool] = None

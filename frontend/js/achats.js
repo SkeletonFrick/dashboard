@@ -8,6 +8,7 @@ import {
   tableLoading,
   tableEmpty,
   confirmAction,
+  escHtml
 } from "./app.js";
 
 requireAuth();
@@ -337,18 +338,20 @@ window.onTypeChange = function (sel) {
 window.submitAchat = async function (e) {
   e.preventDefault();
   const form = e.target;
+
   const payload = {
     date: form.date.value,
     nom: form.nom.value,
     type_achat: form.type_achat.value,
-    prix: parseFloat(form.prix.value),
-    qte: parseInt(form.qte.value) || 1,
+    prix_achat: parseFloat(form.prix_achat.value),   // ✅ était prix
+    quantite: parseInt(form.qte.value) || 1,          // ✅ était qte (name HTML conservé)
     fournisseur_id: form.fournisseur_id?.value
       ? parseInt(form.fournisseur_id.value)
       : null,
-    plateforme_id: form.plateforme_id?.value
-      ? parseInt(form.plateforme_id.value)
+    plateforme: form.plateforme_id?.value             // ✅ string du nom, pas d'ID
+      ? form.plateforme_id.options[form.plateforme_id.selectedIndex].text
       : null,
+    categorie: null,                                  // ✅ pas de categorie dans ce form
     ajout_stock_auto: form.ajout_stock_auto?.checked || false,
     notes: form.notes.value || null,
   };
@@ -509,14 +512,6 @@ window.resetFilters = function () {
 // ─────────────────────────────────────────────
 // UTILS
 // ─────────────────────────────────────────────
-function escHtml(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 window.logout = logout;
 

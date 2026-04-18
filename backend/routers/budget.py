@@ -12,19 +12,19 @@ async def get_budget(
     db: aiosqlite.Connection = Depends(get_db),
 ):
     # --- Paramètres métier ---
-    params = {}
+     params = {}
     async with db.execute(
         "SELECT cle, valeur FROM parametres WHERE cle IN ("
         "'urssaf_pct','reinvest_pct','perso_pct',"
-        "'objectif_mensuel','charges_fixes_total')"
+        "'objectif_mensuel')"          # ✅ était objectif_marge + charges_fixes_total
     ) as cur:
         async for row in cur:
             params[row["cle"]] = row["valeur"]
 
-    urssaf_pct = float(params.get("urssaf_pct", 0.246))
+    urssaf_pct  = float(params.get("urssaf_pct", 0.246))
     reinvest_pct = float(params.get("reinvest_pct", 0.30))
-    perso_pct = float(params.get("perso_pct", 0.454))
-    objectif_mensuel = float(params.get("objectif_mensuel", 1000))
+    perso_pct   = float(params.get("perso_pct", 0.454))
+    objectif_mensuel = float(params.get("objectif_mensuel", 1000)) 
 
     # --- Charges fixes actives ---
     charges_fixes = []
@@ -34,12 +34,12 @@ async def get_budget(
         async for row in cur:
             charges_fixes.append(dict(row))
 
-    def mensualiser(montant: float, periodicite: str) -> float:
+   def mensualiser(montant: float, periodicite: str) -> float:
         mapping = {
-            "mensuelle": 1,
-            "trimestrielle": 1 / 3,
-            "semestrielle": 1 / 6,
-            "annuelle": 1 / 12,
+            "mensuelle":      1,        # ✅ était "mensuelle" — cohérent avec seed corrigé
+            "trimestrielle":  1 / 3,
+            "semestrielle":   1 / 6,
+            "annuelle":       1 / 12,
         }
         return montant * mapping.get(periodicite, 1)
 
