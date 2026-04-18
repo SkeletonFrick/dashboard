@@ -99,7 +99,30 @@ async def get_alertes(
     ) as cur:
         rows = await cur.fetchall()
     return [dict(r) for r in rows]
+from datetime import date as date_type
 
+@router.get("/commandes-en-retard")
+async def get_commandes_en_retard(
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Articles commandés dont la date d'arrivée prévue est dépassée."""
+    today = date_type.today().isoformat()
+    async with db.execute(
+        """
+        SELECT s.*, f.nom as fournisseur_nom
+        FROM stock s
+        LEFT JOIN fournisseurs f ON f.id = s.fournisseur_id
+        WHERE s.actif = 1
+          AND s.commande_en_cours = 1
+          AND s.date_arrivee_prevue IS NOT NULL
+          AND s.date_arrivee_prevue < ?
+        ORDER BY s.date_arrivee_prevue ASC
+        """,
+        (today,),
+    ) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
 
 # ── Détail ────────────────────────────────────────────────────────────────────
 
@@ -181,10 +204,25 @@ async def update_article(
     set_clause += ", updated_at = datetime('now')"
     values = [*fields.values(), stock_id]
 
-    await db.execute(f"UPDATE stock SET {set_clause} WHERE id = ?", values)
+    await db.execute(
+        f"UPDATE stock SET {set_clause} WHERE id = ?", values
+    )
     await _log(db, user["id"], "update", stock_id, str(fields))
     await db.commit()
-    return {"ok": True}
+
+    # Retourne l'article mis à jour complet
+    async with db.execute(
+        """
+        SELECT s.*, f.nom as fournisseur_nom
+        FROM stock s
+        LEFT JOIN fournisseurs f ON f.id = s.fournisseur_id
+        WHERE s.id = ? AND s.actif = 1
+        """,
+        (stock_id,),
+    ) as cur:
+        row = await cur.fetchone()
+
+    return dict(row)
 
 
 # ── Supprimer (archivage) ─────────────────────────────────────────────────────

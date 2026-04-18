@@ -46,10 +46,40 @@ const STATE = {
 };
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+// frontend/js/stock.js
+// Remplacer init() pour charger les filtres sauvegardés
+
 async function init() {
+  _restoreFilters();
   await loadFournisseurs();
   await loadAlertes();
   await loadStock();
+}
+
+function _restoreFilters() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("stock_filters") || "{}"
+    );
+    const searchEl = document.getElementById("filter-search");
+    const catEl = document.getElementById("filter-categorie");
+    if (searchEl && saved.search) searchEl.value = saved.search;
+    if (catEl && saved.categorie) catEl.value = saved.categorie;
+    if (saved.alerteOnly) STATE.alerteOnly = saved.alerteOnly;
+  } catch {
+    // Silencieux
+  }
+}
+
+function _saveFilters() {
+  localStorage.setItem(
+    "stock_filters",
+    JSON.stringify({
+      search: document.getElementById("filter-search")?.value || "",
+      categorie: document.getElementById("filter-categorie")?.value || "",
+      alerteOnly: STATE.alerteOnly,
+    })
+  );
 }
 
 async function loadFournisseurs() {
@@ -69,22 +99,120 @@ async function loadAlertes() {
   const rows = await apiFetch("/api/stock/alertes").catch(() => []);
   const section = document.getElementById("alertes-section");
   const count = document.getElementById("alerte-count");
-  if (!section || !count) return;
-  if (rows.length > 0) {
-    section.classList.remove("hidden");
-    count.textContent = rows.length;
-  } else {
-    section.classList.add("hidden");
+  const bandeau = document.getElementById("alertes-bandeau");
+
+  // ── Compteur navbar ───────────────────────────────────────────────────────
+  if (section && count) {
+    if (rows.length > 0) {
+      section.classList.remove("hidden");
+      count.textContent = rows.length;
+    } else {
+      section.classList.add("hidden");
+    }
   }
+
+  // ── Bandeau alertes visuelles ─────────────────────────────────────────────
+  if (!bandeau) return;
+
+  const ruptures = rows.filter((r) => r.quantite === 0);
+  const bas = rows.filter((r) => r.quantite > 0);
+
+  const alertes = [];
+
+  if (ruptures.length > 0) {
+    const noms = ruptures
+      .slice(0, 3)
+      .map((r) => `<strong>${escHtml(r.nom)}</strong>`)
+      .join(", ");
+    const suite =
+      ruptures.length > 3 ? ` et ${ruptures.length - 3} autre(s)` : "";
+    alertes.push(`
+      <div class="alert alert-error shadow-sm py-2 text-sm">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0
+                   001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2
+                   2 0 00-3.42 0z"/>
+        </svg>
+        <span>
+          🚨 Rupture totale : ${noms}${suite}
+        </span>
+      </div>`);
+  }
+
+  if (bas.length > 0) {
+    const noms = bas
+      .slice(0, 3)
+      .map(
+        (r) =>
+          `<strong>${escHtml(r.nom)}</strong>
+           <span class="opacity-70">(${r.quantite}/${r.stock_minimal})</span>`
+      )
+      .join(", ");
+    const suite = bas.length > 3 ? ` et ${bas.length - 3} autre(s)` : "";
+    alertes.push(`
+      <div class="alert alert-warning shadow-sm py-2 text-sm">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0
+                   001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2
+                   2 0 00-3.42 0z"/>
+        </svg>
+        <span>
+          ⚠️ Stock bas : ${noms}${suite}
+        </span>
+      </div>`);
+  }
+
+  // Commandes en retard
+  const retard = await apiFetch("/api/stock/commandes-en-retard").catch(
+    () => []
+  );
+  if (retard.length > 0) {
+    const noms = retard
+      .slice(0, 3)
+      .map(
+        (r) =>
+          `<strong>${escHtml(r.nom)}</strong>
+           <span class="opacity-70">(prévu : ${formatDate(r.date_arrivee_prevue)})</span>`
+      )
+      .join(", ");
+    const suite =
+      retard.length > 3 ? ` et ${retard.length - 3} autre(s)` : "";
+    alertes.push(`
+      <div class="alert alert-info shadow-sm py-2 text-sm">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>
+          📦 Commande(s) en retard : ${noms}${suite}
+        </span>
+      </div>`);
+  }
+
+  bandeau.innerHTML = alertes.join("");
+  bandeau.classList.toggle("hidden", alertes.length === 0);
 }
 
 // ── Chargement liste ─────────────────────────────────────────────────────────
+// frontend/js/stock.js
+// Remplacer loadStock() pour sauvegarder les filtres
+
 async function loadStock() {
   const tbody = document.getElementById("stock-tbody");
   tableLoading(tbody, 7);
 
   const search = document.getElementById("filter-search")?.value || "";
   const categorie = document.getElementById("filter-categorie")?.value || "";
+
+  _saveFilters();   // ✅ persistance
 
   const params = new URLSearchParams({
     page: STATE.page,
@@ -104,7 +232,6 @@ async function loadStock() {
   renderTable(data.items);
   renderPagination();
 }
-
 // ── Rendu tableau ─────────────────────────────────────────────────────────────
 function renderTable(items) {
   const tbody = document.getElementById("stock-tbody");
@@ -238,24 +365,35 @@ window.openArticleModal = (article = null) => {
   STATE.editId = article?.id || null;
   const form = document.getElementById("form-article");
   const titleEl = document.getElementById("modal-article-title");
+  const qteField = document.getElementById("field-quantite");
+  const qteWarning = document.getElementById("qte-warning");
 
   form.reset();
-  if (titleEl) {
-    titleEl.textContent = article ? "Modifier article" : "Nouvel article";
-  }
 
   if (article) {
+    // ── Mode édition ──────────────────────────────────────────────────────
+    if (titleEl) titleEl.textContent = "Modifier l'article";
+
     form.nom.value = article.nom || "";
     form.categorie.value = article.categorie || "piece";
     if (form.fournisseur_id) {
       form.fournisseur_id.value = article.fournisseur_id || "";
     }
-    // quantite et stock_minimal ne passent pas par StockUpdate
-    // on les affiche juste en lecture dans le modal d'édition
-    if (form.quantite) form.quantite.value = article.quantite ?? 0;
     if (form.stock_minimal) {
       form.stock_minimal.value = article.stock_minimal ?? 1;
     }
+    if (form.reference) form.reference.value = article.reference || "";
+    if (form.emplacement) form.emplacement.value = article.emplacement || "";
+    if (form.notes) form.notes.value = article.notes || "";
+
+    // En édition : masquer le champ quantite, afficher l'avertissement
+    if (qteField) qteField.classList.add("hidden");
+    if (qteWarning) qteWarning.classList.remove("hidden");
+  } else {
+    // ── Mode création ─────────────────────────────────────────────────────
+    if (titleEl) titleEl.textContent = "Nouvel article";
+    if (qteField) qteField.classList.remove("hidden");
+    if (qteWarning) qteWarning.classList.add("hidden");
   }
 
   document.getElementById("modal-article").showModal();
@@ -265,26 +403,36 @@ window.submitArticle = async (e) => {
   e.preventDefault();
   const form = e.target;
 
-  // En création : on envoie quantite (stock initial)
-  // En édition : StockUpdate ignore quantite — passer par /mouvement
-  const payload = STATE.editId
-    ? {
-        nom: form.nom.value.trim(),
-        categorie: form.categorie.value || null,
-        fournisseur_id: form.fournisseur_id?.value
-          ? parseInt(form.fournisseur_id.value)
-          : null,
-        stock_minimal: parseInt(form.stock_minimal?.value) || 1,
-      }
-    : {
-        nom: form.nom.value.trim(),
-        categorie: form.categorie.value || null,
-        fournisseur_id: form.fournisseur_id?.value
-          ? parseInt(form.fournisseur_id.value)
-          : null,
-        quantite: parseInt(form.quantite?.value) || 0,
-        stock_minimal: parseInt(form.stock_minimal?.value) || 1,
-      };
+  let payload;
+
+  if (STATE.editId) {
+    // ── PUT — quantite absent de StockUpdate, on ne l'envoie pas ──────────
+    payload = {
+      nom: form.nom.value.trim(),
+      categorie: form.categorie.value || null,
+      fournisseur_id: form.fournisseur_id?.value
+        ? parseInt(form.fournisseur_id.value)
+        : null,
+      stock_minimal: parseInt(form.stock_minimal?.value) || 1,
+      reference: form.reference?.value.trim() || null,
+      emplacement: form.emplacement?.value.trim() || null,
+      notes: form.notes?.value.trim() || null,
+    };
+  } else {
+    // ── POST — quantite autorisé en création ──────────────────────────────
+    payload = {
+      nom: form.nom.value.trim(),
+      categorie: form.categorie.value || null,
+      fournisseur_id: form.fournisseur_id?.value
+        ? parseInt(form.fournisseur_id.value)
+        : null,
+      quantite: parseInt(form.quantite?.value) || 0,
+      stock_minimal: parseInt(form.stock_minimal?.value) || 1,
+      reference: form.reference?.value.trim() || null,
+      emplacement: form.emplacement?.value.trim() || null,
+      notes: form.notes?.value.trim() || null,
+    };
+  }
 
   const url = STATE.editId ? `/api/stock/${STATE.editId}` : "/api/stock";
   const method = STATE.editId ? "PUT" : "POST";
@@ -302,7 +450,6 @@ window.submitArticle = async (e) => {
     showToast(err.message || "Erreur lors de l'enregistrement", "error");
   }
 };
-
 // ── Suppression ───────────────────────────────────────────────────────────────
 window.deleteArticle = async (id) => {
   if (!confirmAction("Archiver cet article ? Il ne sera plus visible dans le stock.")) {

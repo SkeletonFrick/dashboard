@@ -254,6 +254,9 @@ async def update_reparation(
 
 # ── Suppression ───────────────────────────────────────────────────────────────
 
+# backend/routers/reparations.py
+# Remplacer delete_reparation()
+
 @router.delete("/{rep_id}", status_code=204)
 async def delete_reparation(
     rep_id: int,
@@ -275,8 +278,9 @@ async def delete_reparation(
         "SELECT chemin FROM fichiers WHERE type_parent = 'reparation' AND parent_id = ?",
         [rep_id],
     )
+    # ✅ await manquant
     for f in fichiers:
-        delete_file(f["chemin"])
+        await delete_file(f["chemin"])
 
     await db.execute(
         "DELETE FROM reparation_pieces WHERE reparation_id = ?", [rep_id]
@@ -294,7 +298,6 @@ async def delete_reparation(
         [current_user["id"], rep_id, json.dumps({"rep_id": rep_id})],
     )
     await db.commit()
-
 
 # ── Pièces ────────────────────────────────────────────────────────────────────
 
@@ -463,10 +466,10 @@ async def delete_fichier(
     if not rows:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
 
-    delete_file(rows[0]["chemin"])
+    # ✅ await manquant
+    await delete_file(rows[0]["chemin"])
     await db.execute("DELETE FROM fichiers WHERE id = ?", [fichier_id])
     await db.commit()
-
 
 # ── Reçu imprimable ───────────────────────────────────────────────────────────
 

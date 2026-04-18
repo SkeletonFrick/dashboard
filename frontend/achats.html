@@ -9,6 +9,41 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Dans le <head> de toutes les pages HTML -->
+<style>
+  /* Sidebar fixe desktop */
+  @media (min-width: 1024px) {
+    .drawer-side {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+  }
+
+  /* Tableau responsive — scroll horizontal sur mobile */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Truncate long textes dans les cellules */
+  td .truncate { max-width: 200px; }
+
+  /* Badge statut lisible sur fond sombre et clair */
+  .badge { white-space: nowrap; }
+
+  /* Toast toujours visible */
+  #toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 24rem;
+  }
+</style>
   </head>
   <body class="bg-base-200 min-h-screen">
     <!-- DRAWER (copie exacte du layout index.html) -->

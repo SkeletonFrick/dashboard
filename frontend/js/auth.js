@@ -1,12 +1,8 @@
-/**
- * auth.js — Gestion JWT côté client
- * Utilisé par toutes les pages et login.html
- */
+// frontend/js/auth.js
 
 const API_BASE = "";
-let authError = null;
 
-// ── Stockage token ──────────────────────────────────────────────
+// ── Stockage token ────────────────────────────────────────────────────────────
 
 function getToken() {
   return localStorage.getItem("token");
@@ -21,10 +17,9 @@ function clearToken() {
   localStorage.removeItem("current_user");
 }
 
-// ── Login / Logout ──────────────────────────────────────────────
+// ── Login / Logout ────────────────────────────────────────────────────────────
 
 async function login(username, password) {
-  authError = null;
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
@@ -34,21 +29,16 @@ async function login(username, password) {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      authError = data.detail || "Erreur de connexion";
-      return false;
+      return { ok: false, error: data.detail || "Erreur de connexion" };
     }
 
     const data = await res.json();
     setToken(data.access_token);
-
-    // Récupérer les infos utilisateur
     await fetchCurrentUser();
-
     window.location.replace("/index.html");
-    return true;
+    return { ok: true };
   } catch {
-    authError = "Impossible de joindre le serveur";
-    return false;
+    return { ok: false, error: "Impossible de joindre le serveur" };
   }
 }
 
@@ -64,16 +54,21 @@ async function logout() {
   window.location.replace("/login.html");
 }
 
-// ── Utilisateur courant ─────────────────────────────────────────
+// ── Utilisateur courant ───────────────────────────────────────────────────────
 
 async function fetchCurrentUser() {
-  const res = await authFetch("/api/auth/me");
-  if (res.ok) {
-    const user = await res.json();
-    localStorage.setItem("current_user", JSON.stringify(user));
-    return user;
-  }
-  return null;
+  const token = getToken();
+  if (!token) return null;
+
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => null);
+
+  if (!res || !res.ok) return null;
+
+  const user = await res.json();
+  localStorage.setItem("current_user", JSON.stringify(user));
+  return user;
 }
 
 function getCurrentUser() {
@@ -84,7 +79,7 @@ function getCurrentUser() {
   }
 }
 
-// ── Fetch authentifié ───────────────────────────────────────────
+// ── Fetch authentifié ─────────────────────────────────────────────────────────
 
 async function authFetch(url, options = {}) {
   const token = getToken();
@@ -99,14 +94,13 @@ async function authFetch(url, options = {}) {
   if (res.status === 401) {
     clearToken();
     window.location.replace("/login.html");
-    // Retourner une Response jamais résolue pour stopper l'exécution
     return new Promise(() => {});
   }
 
   return res;
 }
 
-// ── Guard — à appeler en tête de chaque page protégée ──────────
+// ── Guard ─────────────────────────────────────────────────────────────────────
 
 function requireAuth() {
   if (!getToken()) {
@@ -115,3 +109,17 @@ function requireAuth() {
   }
   return true;
 }
+
+// ── Exports ES module ─────────────────────────────────────────────────────────
+
+export {
+  getToken,
+  setToken,
+  clearToken,
+  login,
+  logout,
+  fetchCurrentUser,
+  getCurrentUser,
+  authFetch,
+  requireAuth,
+};

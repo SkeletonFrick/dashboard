@@ -1,3 +1,5 @@
+# backend/routers/auth.py — fichier complet corrigé
+
 from datetime import datetime, timezone
 
 import aiosqlite
@@ -7,8 +9,8 @@ from backend.auth import (
     create_access_token,
     get_current_user,
     hash_password,
+    require_role,
     verify_password,
-    require_role
 )
 from backend.database import DB_PATH
 from backend.models import UserCreate, UserLogin, UserOut
@@ -32,7 +34,7 @@ async def login(payload: UserLogin):
             detail="Identifiants invalides",
         )
 
-    # Mise à jour last_login
+    # Mise à jour last_login_at — nom unifié avec database.py
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             "UPDATE utilisateurs SET last_login_at = ? WHERE id = ?",
@@ -41,14 +43,18 @@ async def login(payload: UserLogin):
         await db.commit()
 
     token = create_access_token(
-        {"sub": str(user["id"]), "username": user["username"], "role": user["role"]}
+        {
+            "sub": str(user["id"]),
+            "username": user["username"],
+            "role": user["role"],
+        }
     )
     return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/logout")
 async def logout(_user=Depends(get_current_user)):
-    # JWT stateless : le logout est géré côté client (suppression du token)
+    # JWT stateless : le logout est géré côté client
     return {"message": "Déconnecté"}
 
 
@@ -57,7 +63,11 @@ async def me(user=Depends(get_current_user)):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT id, username, role, last_login_at FROM utilisateurs WHERE id = ?",
+            """
+            SELECT id, username, role, actif, created_at, last_login_at
+            FROM utilisateurs
+            WHERE id = ?
+            """,
             (user["id"],),
         ) as cur:
             row = await cur.fetchone()
@@ -76,18 +86,36 @@ async def create_user(
     """Création d'un utilisateur (admin uniquement)."""
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT id FROM utilisateurs WHERE username = ?", (payload.username,)
-        ) as cur:
-            if await cur.fetchone():
-                raise HTTPException(status_code=409, detail="Nom d'utilisateur déjà pris")
 
         async with db.execute(
-            """INSERT INTO utilisateurs (username, password_hash, role, actif)
-               VALUES (?, ?, ?, 1) RETURNING id, username, role, last_login""",
+            "SELECT id FROM utilisateurs WHERE username = ?",
+            (payload.username,),
+        ) as cur:
+            if await cur.fetchone():
+                raise HTTPException(
+                    status_code=409,
+                    detail="Nom d'utilisateur déjà pris",
+                )
+
+        async with db.execute(
+            """
+            INSERT INTO utilisateurs (username, password_hash, role, actif)
+            VALUES (?, ?, ?, 1)
+            """,
             (payload.username, hash_password(payload.password), payload.role),
         ) as cur:
-            row = await cur.fetchone()
+            new_id = cur.lastrowid
+
         await db.commit()
+
+        async with db.execute(
+            """
+            SELECT id, username, role, actif, created_at, last_login_at
+            FROM utilisateurs
+            WHERE id = ?
+            """,
+            (new_id,),
+        ) as cur:
+            row = await cur.fetchone()
 
     return UserOut(**dict(row))

@@ -192,14 +192,20 @@ async def delete_flip(
 ):
     flip = await _get_flip_or_404(db, flip_id)
     if flip["statut"] == "vendu":
-        raise HTTPException(status_code=400, detail="Impossible de supprimer un flip vendu")
+        raise HTTPException(
+            status_code=400,
+            detail="Impossible de supprimer un flip vendu"
+        )
 
-    # Suppression fichiers physiques
+    # ✅ await manquant sur delete_file
     fichiers = await _get_fichiers(db, flip_id)
     for f in fichiers:
-        delete_file(f["chemin"])
+        await delete_file(f["chemin"])
 
-    await db.execute("DELETE FROM fichiers WHERE type_parent = 'flip' AND parent_id = ?", (flip_id,))
+    await db.execute(
+        "DELETE FROM fichiers WHERE type_parent = 'flip' AND parent_id = ?",
+        (flip_id,),
+    )
     await db.execute("DELETE FROM flip_pieces WHERE flip_id = ?", (flip_id,))
     await db.execute("DELETE FROM flips WHERE id = ?", (flip_id,))
     await _log(db, user["id"], "delete", flip_id, flip["nom"])
@@ -248,7 +254,18 @@ async def add_piece(
 ):
     await _get_flip_or_404(db, flip_id)
 
-    # Décrémente stock (lève 400 si insuffisant, 404 si absent)
+    # Vérifie que l'article stock existe et récupère son prix unitaire moyen
+    rows = await db.execute_fetchall(
+        "SELECT id, nom, quantite FROM stock WHERE id = ? AND actif = 1",
+        (payload.stock_id,),
+    )
+    if not rows:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Article stock #{payload.stock_id} introuvable ou archivé",
+        )
+
+    # Décrémente stock (lève 400 si insuffisant)
     await decrementer_stock(
         db,
         payload.stock_id,
@@ -257,26 +274,27 @@ async def add_piece(
         reference_type="flip",
     )
 
-    # Prix unitaire : fourni ou prix moyen du stock
-    prix = payload.prix_unitaire
-    if prix is None:
-        row = await db.execute_fetchall(
-            "SELECT prix_achat FROM achats WHERE id = (SELECT achat_id FROM stock WHERE id = ? LIMIT 1) LIMIT 1",
-            (payload.stock_id,),
-        )
-        # Fallback : 0 si inconnu
-        prix = 0.0
+    # ✅ Prix : fourni par l'utilisateur, sinon 0.0
+    # Le frontend affiche un champ optionnel pour saisir le prix unitaire
+    prix = payload.prix_unitaire if payload.prix_unitaire is not None else 0.0
 
     now = datetime.utcnow().isoformat()
     await db.execute(
         """
-        INSERT INTO flip_pieces (flip_id, stock_id, quantite, prix_unitaire, created_at)
-        VALUES (?,?,?,?,?)
+        INSERT INTO flip_pieces
+            (flip_id, stock_id, quantite, prix_unitaire, created_at)
+        VALUES (?, ?, ?, ?, ?)
         """,
         (flip_id, payload.stock_id, payload.quantite, prix, now),
     )
     await _recalc_cout_pieces(db, flip_id)
-    await _log(db, user["id"], "add_piece", flip_id, f"stock_id={payload.stock_id} qte={payload.quantite}")
+    await _log(
+        db,
+        user["id"],
+        "add_piece",
+        flip_id,
+        f"stock_id={payload.stock_id} qte={payload.quantite} prix={prix}",
+    )
     await db.commit()
     return await get_flip(flip_id, db, user)
 
@@ -354,6 +372,8 @@ async def delete_fichier(
     )
     if not rows:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
-    delete_file(rows[0]["chemin"])
+
+    # ✅ await manquant
+    await delete_file(rows[0]["chemin"])
     await db.execute("DELETE FROM fichiers WHERE id = ?", (fichier_id,))
     await db.commit()

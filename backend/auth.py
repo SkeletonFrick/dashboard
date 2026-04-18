@@ -1,121 +1,79 @@
-# backend/routers/auth.py — fichier complet corrigé
+# backend/auth.py
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 
-import aiosqlite
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
-from backend.auth import (
-    create_access_token,
-    get_current_user,
-    hash_password,
-    require_role,
-    verify_password,
-)
-from backend.database import DB_PATH
-from backend.models import UserCreate, UserLogin, UserOut
+SECRET_KEY = "change-me-in-production-use-env-var"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 heures
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-@router.post("/login")
-async def login(payload: UserLogin):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            "SELECT * FROM utilisateurs WHERE username = ? AND actif = 1",
-            (payload.username,),
-        ) as cur:
-            user = await cur.fetchone()
 
-    if not user or not verify_password(payload.password, user["password_hash"]):
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password[:72])
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain[:72], hashed)
+
+
+def create_access_token(
+    data: dict, expires_delta: Optional[timedelta] = None
+) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    to_encode["exp"] = expire
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Identifiants invalides",
+            detail="Token invalide ou expiré",
         )
 
-    # Mise à jour last_login_at — nom unifié avec database.py
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            "UPDATE utilisateurs SET last_login_at = ? WHERE id = ?",
-            (datetime.now(timezone.utc).isoformat(), user["id"]),
-        )
-        await db.commit()
 
-    token = create_access_token(
-        {
-            "sub": str(user["id"]),
-            "username": user["username"],
-            "role": user["role"],
-        }
-    )
-    return {"access_token": token, "token_type": "bearer"}
-
-
-@router.post("/logout")
-async def logout(_user=Depends(get_current_user)):
-    # JWT stateless : le logout est géré côté client
-    return {"message": "Déconnecté"}
-
-
-@router.get("/me", response_model=UserOut)
-async def me(user=Depends(get_current_user)):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute(
-            """
-            SELECT id, username, role, actif, created_at, last_login_at
-            FROM utilisateurs
-            WHERE id = ?
-            """,
-            (user["id"],),
-        ) as cur:
-            row = await cur.fetchone()
-
-    if not row:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-
-    return UserOut(**dict(row))
-
-
-@router.post("/users", response_model=UserOut)
-async def create_user(
-    payload: UserCreate,
-    _admin=Depends(require_role("admin")),
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        bearer_scheme
+    ),
 ):
-    """Création d'un utilisateur (admin uniquement)."""
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
+    """Dépendance FastAPI — injecte l'utilisateur courant depuis le JWT."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Non authentifié",
+        )
+    payload = decode_token(credentials.credentials)
+    return {
+        "id": payload.get("sub"),
+        "username": payload.get("username"),
+        "role": payload.get("role"),
+    }
 
-        async with db.execute(
-            "SELECT id FROM utilisateurs WHERE username = ?",
-            (payload.username,),
-        ) as cur:
-            if await cur.fetchone():
-                raise HTTPException(
-                    status_code=409,
-                    detail="Nom d'utilisateur déjà pris",
-                )
 
-        async with db.execute(
-            """
-            INSERT INTO utilisateurs (username, password_hash, role, actif)
-            VALUES (?, ?, ?, 1)
-            """,
-            (payload.username, hash_password(payload.password), payload.role),
-        ) as cur:
-            new_id = cur.lastrowid
+def require_role(*roles: str):
+    """Dépendance factory pour restreindre l'accès par rôle."""
 
-        await db.commit()
+    async def _check(user: dict = Depends(get_current_user)):
+        if user["role"] not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Droits insuffisants",
+            )
+        return user
 
-        async with db.execute(
-            """
-            SELECT id, username, role, actif, created_at, last_login_at
-            FROM utilisateurs
-            WHERE id = ?
-            """,
-            (new_id,),
-        ) as cur:
-            row = await cur.fetchone()
-
-    return UserOut(**dict(row))
+    return _check

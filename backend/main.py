@@ -45,11 +45,15 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 # ── Fichiers statiques ─────────────────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 app.mount(
+    "/js",
+    StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")),
+    name="js",
+)
+app.mount(
     "/uploads",
     StaticFiles(directory=os.path.join(DATA_DIR, "uploads")),
     name="uploads",
 )
-
 # ── Routes publiques (pas de vérification JWT) ─────────────────────────────────
 PUBLIC_API_PATHS = {"/api/auth/login"}
 

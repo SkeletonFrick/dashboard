@@ -1,3 +1,5 @@
+# backend/routers/budget.py
+
 from fastapi import APIRouter, Depends
 from backend.auth import get_current_user
 from backend.database import get_db
@@ -12,19 +14,18 @@ async def get_budget(
     db: aiosqlite.Connection = Depends(get_db),
 ):
     # --- Paramètres métier ---
-     params = {}
+    params = {}
     async with db.execute(
         "SELECT cle, valeur FROM parametres WHERE cle IN ("
-        "'urssaf_pct','reinvest_pct','perso_pct',"
-        "'objectif_mensuel')"          # ✅ était objectif_marge + charges_fixes_total
+        "'urssaf_pct','reinvest_pct','perso_pct','objectif_mensuel')"
     ) as cur:
         async for row in cur:
             params[row["cle"]] = row["valeur"]
 
-    urssaf_pct  = float(params.get("urssaf_pct", 0.246))
+    urssaf_pct = float(params.get("urssaf_pct", 0.246))
     reinvest_pct = float(params.get("reinvest_pct", 0.30))
-    perso_pct   = float(params.get("perso_pct", 0.454))
-    objectif_mensuel = float(params.get("objectif_mensuel", 1000)) 
+    perso_pct = float(params.get("perso_pct", 0.454))
+    objectif_mensuel = float(params.get("objectif_mensuel", 1000))
 
     # --- Charges fixes actives ---
     charges_fixes = []
@@ -34,12 +35,12 @@ async def get_budget(
         async for row in cur:
             charges_fixes.append(dict(row))
 
-   def mensualiser(montant: float, periodicite: str) -> float:
+    def mensualiser(montant: float, periodicite: str) -> float:
         mapping = {
-            "mensuelle":      1,        # ✅ était "mensuelle" — cohérent avec seed corrigé
-            "trimestrielle":  1 / 3,
-            "semestrielle":   1 / 6,
-            "annuelle":       1 / 12,
+            "mensuelle": 1,
+            "trimestrielle": 1 / 3,
+            "semestrielle": 1 / 6,
+            "annuelle": 1 / 12,
         }
         return montant * mapping.get(periodicite, 1)
 
@@ -58,7 +59,7 @@ async def get_budget(
         row = await cur.fetchone()
         ca_mois = float(row["ca"])
 
-    # --- CA des 12 derniers mois (pour graphique) ---
+    # --- CA des 12 derniers mois ---
     historique = []
     async with db.execute(
         """
@@ -77,14 +78,14 @@ async def get_budget(
     async with db.execute(
         """
         SELECT
-            COALESCE(SUM(v.prix_vente), 0) AS ca,
             COALESCE(SUM(
                 CASE
                     WHEN v.flip_id IS NOT NULL
-                        THEN v.prix_vente - COALESCE(f.prix_achat,0)
-                             - COALESCE(f.cout_pieces,0)
+                        THEN v.prix_vente
+                             - COALESCE(f.prix_achat, 0)
+                             - COALESCE(f.cout_pieces, 0)
                     WHEN v.achat_id IS NOT NULL
-                        THEN v.prix_vente - COALESCE(a.prix_achat,0)
+                        THEN v.prix_vente - COALESCE(a.prix_achat, 0)
                     ELSE v.prix_vente
                 END
             ), 0) AS marge_brute
@@ -97,7 +98,7 @@ async def get_budget(
         row = await cur.fetchone()
         marge_brute_mois = float(row["marge_brute"])
 
-    # --- Nb réparations livrées ce mois ---
+    # --- Réparations livrées ce mois ---
     async with db.execute(
         """
         SELECT COALESCE(SUM(prix_facture), 0) AS ca_rep,
@@ -111,7 +112,7 @@ async def get_budget(
         ca_reparations_mois = float(row["ca_rep"])
         nb_reparations_mois = int(row["nb_rep"])
 
-    # --- CA total toutes sources ---
+    # --- CA total ---
     ca_total_mois = ca_mois + ca_reparations_mois
 
     # --- Répartition budget ---
@@ -120,12 +121,8 @@ async def get_budget(
     montant_perso = round(ca_total_mois * perso_pct, 2)
     net_apres_charges = round(montant_perso - total_charges_mensuelles, 2)
 
-    # --- Déclaration AE : base imposable recommandée ---
-    # Pour AE : CA ventes = total ventes (pas les réparations séparément)
-    # On expose le CA déclarable (ventes + réparations = tout)
     ca_declarable = ca_total_mois
 
-    # --- Avancement objectif ---
     avancement_pct = (
         round((ca_total_mois / objectif_mensuel) * 100, 1)
         if objectif_mensuel > 0

@@ -9,6 +9,41 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Dans le <head> de toutes les pages HTML -->
+<style>
+  /* Sidebar fixe desktop */
+  @media (min-width: 1024px) {
+    .drawer-side {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+  }
+
+  /* Tableau responsive — scroll horizontal sur mobile */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Truncate long textes dans les cellules */
+  td .truncate { max-width: 200px; }
+
+  /* Badge statut lisible sur fond sombre et clair */
+  .badge { white-space: nowrap; }
+
+  /* Toast toujours visible */
+  #toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 24rem;
+  }
+</style>
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="drawer lg:drawer-open">
@@ -42,6 +77,7 @@
         <main class="p-4 lg:p-6 flex-1">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">Stock de pièces</h1>
+            <div id="alertes-bandeau" class="hidden space-y-2 mb-4"></div>
             <button
               class="btn btn-primary btn-sm"
               onclick="openArticleModal()"
@@ -258,56 +294,101 @@
           Nouvel article
         </h3>
         <form id="form-article" onsubmit="submitArticle(event)">
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="form-control sm:col-span-2">
-              <label class="label label-text">Nom *</label>
-              <input
-                type="text"
-                name="nom"
-                class="input input-bordered"
-                required
-              />
-            </div>
-            <div class="form-control">
-              <label class="label label-text">Catégorie</label>
-              <select name="categorie" class="select select-bordered">
-                <option value="piece">Pièce</option>
-                <option value="accessoire">Accessoire</option>
-                <option value="consommable">Consommable</option>
-                <option value="outillage">Outillage</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label label-text">Fournisseur</label>
-              <select
-                name="fournisseur_id"
-                id="form-fournisseur"
-                class="select select-bordered"
-              >
-                <option value="">— aucun —</option>
-              </select>
-            </div>
-            <div class="form-control">
-              <label class="label label-text">Quantité initiale</label>
-              <input
-                type="number"
-                name="quantite"
-                class="input input-bordered"
-                min="0"
-                value="0"
-              />
-            </div>
-            <div class="form-control">
-              <label class="label label-text">Seuil minimal</label>
-              <input
-                type="number"
-                name="stock_minimal"
-                class="input input-bordered"
-                min="0"
-                value="1"
-              />
-            </div>
-          </div>
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+  <div class="form-control sm:col-span-2">
+    <label class="label label-text">Nom *</label>
+    <input
+      type="text"
+      name="nom"
+      class="input input-bordered"
+      required
+    />
+  </div>
+
+  <div class="form-control">
+    <label class="label label-text">Catégorie</label>
+    <select name="categorie" class="select select-bordered">
+      <option value="piece">Pièce</option>
+      <option value="accessoire">Accessoire</option>
+      <option value="consommable">Consommable</option>
+      <option value="outillage">Outillage</option>
+    </select>
+  </div>
+
+  <div class="form-control">
+    <label class="label label-text">Fournisseur</label>
+    <select
+      name="fournisseur_id"
+      id="form-fournisseur"
+      class="select select-bordered"
+    >
+      <option value="">— aucun —</option>
+    </select>
+  </div>
+
+  <!-- Quantite initiale — visible uniquement en création -->
+  <div class="form-control" id="field-quantite">
+    <label class="label label-text">Quantité initiale</label>
+    <input
+      type="number"
+      name="quantite"
+      class="input input-bordered"
+      min="0"
+      value="0"
+    />
+  </div>
+
+  <!-- Avertissement — visible uniquement en édition -->
+  <div
+    id="qte-warning"
+    class="hidden alert alert-info text-xs py-2 sm:col-span-2"
+  >
+    💡 Pour modifier la quantité, utilisez
+    <strong>Détail → Mouvement manuel</strong>
+    afin de conserver la traçabilité.
+  </div>
+
+  <div class="form-control">
+    <label class="label label-text">Seuil minimal</label>
+    <input
+      type="number"
+      name="stock_minimal"
+      class="input input-bordered"
+      min="0"
+      value="1"
+    />
+  </div>
+
+  <div class="form-control">
+    <label class="label label-text">Référence</label>
+    <input
+      type="text"
+      name="reference"
+      class="input input-bordered"
+      placeholder="Optionnel"
+    />
+  </div>
+
+  <div class="form-control">
+    <label class="label label-text">Emplacement</label>
+    <input
+      type="text"
+      name="emplacement"
+      class="input input-bordered"
+      placeholder="Ex: Tiroir A3"
+    />
+  </div>
+
+  <div class="form-control sm:col-span-2">
+    <label class="label label-text">Notes</label>
+    <textarea
+      name="notes"
+      class="textarea textarea-bordered"
+      rows="2"
+    ></textarea>
+  </div>
+</div>
+
           <div class="modal-action">
             <button
               type="button"
