@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<!doctype html>
+<html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,79 +9,40 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"
-    ></script>
-    <!-- Dans le <head> de toutes les pages HTML -->
-<style>
-  /* Sidebar fixe desktop */
-  @media (min-width: 1024px) {
-    .drawer-side {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-  }
-
-  /* Tableau responsive — scroll horizontal sur mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Truncate long textes dans les cellules */
-  td .truncate { max-width: 200px; }
-
-  /* Badge statut lisible sur fond sombre et clair */
-  .badge { white-space: nowrap; }
-
-  /* Toast toujours visible */
-  #toast-container {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 24rem;
-  }
-</style>
+    <style>
+      @media (min-width: 1024px) {
+        .drawer-side { position: sticky; top: 0; height: 100vh; }
+      }
+      .badge { white-space: nowrap; }
+      #toast-container {
+        position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="drawer lg:drawer-open">
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <!-- CONTENU PRINCIPAL -->
       <div class="drawer-content flex flex-col">
+
         <!-- Navbar mobile -->
-        <div class="navbar bg-base-100 shadow lg:hidden">
-          <label for="drawer-toggle" class="btn btn-ghost">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+        <div class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30">
+          <label for="drawer-toggle" class="btn btn-ghost btn-square drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </label>
-          <span class="text-lg font-bold ml-2">Clients</span>
+          <span class="font-bold text-lg ml-2">Clients</span>
         </div>
 
-        <!-- Contenu principal -->
-        <main class="p-4 md:p-6 flex-1">
+        <main class="p-4 md:p-6 flex-1 max-w-7xl mx-auto w-full">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">Clients</h1>
-            <button
-              class="btn btn-primary"
-              onclick="openClientModal()"
-            >
+            <button class="btn btn-primary btn-sm" onclick="openClientModal()">
               + Nouveau client
             </button>
           </div>
@@ -99,10 +60,7 @@
                     oninput="debouncedSearch()"
                   />
                 </div>
-                <button
-                  class="btn btn-ghost btn-sm"
-                  onclick="resetFilters()"
-                >
+                <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
                   Réinitialiser
                 </button>
               </div>
@@ -111,7 +69,7 @@
 
           <!-- Tableau -->
           <div class="card bg-base-100 shadow overflow-x-auto">
-            <table class="table table-zebra w-full">
+            <table class="table table-sm table-zebra w-full">
               <thead>
                 <tr>
                   <th>Nom</th>
@@ -132,67 +90,76 @@
           </div>
 
           <!-- Pagination -->
-          <div
-            id="pagination"
-            class="flex items-center justify-between mt-4 text-sm text-base-content/70"
-          ></div>
+          <div id="pagination"
+               class="flex items-center justify-between mt-4
+                      text-sm text-base-content/70">
+          </div>
         </main>
       </div>
 
-      <!-- Sidebar -->
+      <!-- SIDEBAR -->
       <div class="drawer-side z-40">
         <label for="drawer-toggle" class="drawer-overlay"></label>
-        <aside
-          class="bg-base-100 w-64 min-h-full shadow-lg flex flex-col"
-        >
-          <div class="p-4 border-b">
-            <span class="text-xl font-bold">AQ Réparation</span>
-          </div>
-          <nav class="flex-1 p-2 menu">
-            <li class="menu-title">Activité</li>
-            <li><a href="/index.html">Dashboard</a></li>
-            <li><a href="/reparations.html">Réparations</a></li>
-            <li><a href="/flips.html">Flips</a></li>
-            <li class="menu-title mt-2">Gestion</li>
-            <li><a href="/achats.html">Achats</a></li>
-            <li><a href="/ventes.html">Ventes</a></li>
-            <li><a href="/stock.html">Stock</a></li>
-            <li><a href="/clients.html" class="active">Clients</a></li>
-            <li><a href="/fournisseurs.html">Fournisseurs</a></li>
-            <li><a href="/materiel.html">Matériel</a></li>
-            <li class="menu-title mt-2">Finance</li>
-            <li><a href="/budget.html">Budget</a></li>
-            <li><a href="/parametres.html">Paramètres</a></li>
-          </nav>
-          <div class="p-4 border-t">
-            <div class="flex items-center gap-2 mb-2">
-              <div
-                class="avatar placeholder"
-                id="sidebar-avatar"
-              >
-                <div
-                  class="bg-primary text-primary-content rounded-full w-8"
-                >
-                  <span id="sidebar-initial">?</span>
-                </div>
-              </div>
-              <span
-                id="sidebar-username"
-                class="text-sm font-medium"
-              ></span>
+        <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center
+                        justify-center text-primary-content font-bold text-sm">
+              AQ
             </div>
-            <button
-              class="btn btn-ghost btn-sm w-full"
-              onclick="logout()"
-            >
-              Déconnexion
+            <span class="font-bold text-sm">AQ Réparation</span>
+          </div>
+          <nav class="flex-1 overflow-y-auto py-3 px-2">
+            <ul class="menu menu-sm gap-0.5">
+              <li>
+                <a href="/index.html" data-page="index">🏠 Dashboard</a>
+              </li>
+              <li class="menu-title mt-2">Activité</li>
+              <li><a href="/achats.html" data-page="achats">🛒 Achats</a></li>
+              <li><a href="/ventes.html" data-page="ventes">💰 Ventes</a></li>
+              <li><a href="/flips.html" data-page="flips">📱 Flips</a></li>
+              <li>
+                <a href="/reparations.html" data-page="reparations">🔧 Réparations</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li><a href="/stock.html" data-page="stock">📦 Stock</a></li>
+              <li><a href="/clients.html" data-page="clients">👥 Clients</a></li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs">🏭 Fournisseurs</a>
+              </li>
+              <li>
+                <a href="/materiel.html" data-page="materiel">🛠️ Matériel</a>
+              </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li><a href="/budget.html" data-page="budget">📊 Budget</a></li>
+              <li>
+                <a href="/parametres.html" data-page="parametres">⚙️ Paramètres</a>
+              </li>
+            </ul>
+          </nav>
+          <div class="border-t border-base-200 px-4 py-3 flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-primary text-primary-content rounded-full w-8">
+                <span class="text-xs" id="sidebar-avatar">?</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate" id="sidebar-username">—</p>
+              <p class="text-xs text-base-content/50" id="sidebar-role">—</p>
+            </div>
+            <button onclick="logout()" class="btn btn-ghost btn-xs" title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3
+                         3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
             </button>
           </div>
         </aside>
       </div>
     </div>
 
-    <!-- Modal création/édition client -->
+    <!-- Modal création/édition -->
     <dialog id="client-modal" class="modal">
       <div class="modal-box w-full max-w-lg">
         <h3 class="font-bold text-lg mb-4" id="client-modal-title">
@@ -202,77 +169,63 @@
           <div class="grid grid-cols-1 gap-4">
             <div class="form-control">
               <label class="label"><span class="label-text">Nom *</span></label>
-              <input
-                type="text"
-                name="nom"
-                class="input input-bordered"
-                required
-              />
+              <input type="text" name="nom" class="input input-bordered" required />
             </div>
             <div class="form-control">
-              <label class="label"
-                ><span class="label-text">Téléphone</span></label
-              >
-              <input
-                type="tel"
-                name="telephone"
-                class="input input-bordered"
-              />
+              <label class="label"><span class="label-text">Téléphone</span></label>
+              <input type="tel" name="telephone" class="input input-bordered" />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Email</span></label>
-              <input
-                type="email"
-                name="email"
-                class="input input-bordered"
-              />
+              <input type="email" name="email" class="input input-bordered" />
             </div>
             <div class="form-control">
               <label class="label"><span class="label-text">Notes</span></label>
-              <textarea
-                name="notes"
-                class="textarea textarea-bordered"
-                rows="3"
-              ></textarea>
+              <textarea name="notes" class="textarea textarea-bordered" rows="3"></textarea>
             </div>
           </div>
           <div class="modal-action">
-            <button
-              type="button"
-              class="btn btn-ghost"
-              onclick="document.getElementById('client-modal').close()"
-            >
+            <button type="button" class="btn btn-ghost"
+              onclick="document.getElementById('client-modal').close()">
               Annuler
             </button>
             <button type="submit" class="btn btn-primary">Enregistrer</button>
           </div>
         </form>
       </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
-    <!-- Modal détail client -->
+    <!-- Modal détail -->
     <dialog id="client-detail-modal" class="modal">
       <div class="modal-box w-full max-w-2xl">
-        <h3
-          class="font-bold text-lg mb-4"
-          id="detail-client-nom"
-        ></h3>
+        <h3 class="font-bold text-lg mb-4" id="detail-client-nom"></h3>
         <div id="detail-client-body" class="space-y-4"></div>
         <div class="modal-action">
-          <form method="dialog">
-            <button class="btn">Fermer</button>
-          </form>
+          <form method="dialog"><button class="btn">Fermer</button></form>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
-    <script type="module" src="/js/auth.js"></script>
+    <script type="module">
+      import { requireAuth, logout as _logout, getCurrentUser } from "/js/auth.js";
+
+      window.logout = _logout;
+      requireAuth();
+
+      document.querySelectorAll("[data-page]").forEach((el) => {
+        if (el.dataset.page === "clients") el.classList.add("active");
+      });
+
+      const user = getCurrentUser();
+      if (user?.username) {
+        document.getElementById("sidebar-avatar").textContent =
+          user.username[0].toUpperCase();
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
+      }
+    </script>
     <script type="module" src="/js/clients.js"></script>
   </body>
 </html>

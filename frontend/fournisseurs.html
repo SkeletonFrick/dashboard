@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
@@ -9,85 +9,68 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Dans le <head> de toutes les pages HTML -->
-<style>
-  /* Sidebar fixe desktop */
-  @media (min-width: 1024px) {
-    .drawer-side {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-  }
-
-  /* Tableau responsive — scroll horizontal sur mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Truncate long textes dans les cellules */
-  td .truncate { max-width: 200px; }
-
-  /* Badge statut lisible sur fond sombre et clair */
-  .badge { white-space: nowrap; }
-
-  /* Toast toujours visible */
-  #toast-container {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 24rem;
-  }
-</style>
+    <style>
+      @media (min-width: 1024px) {
+        .drawer-side { position: sticky; top: 0; height: 100vh; }
+      }
+      .badge { white-space: nowrap; }
+      #toast-container {
+        position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="drawer lg:drawer-open">
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <!-- CONTENU PRINCIPAL -->
       <div class="drawer-content flex flex-col">
+
         <!-- Navbar mobile -->
         <div class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30">
-          <label
-            for="drawer-toggle"
-            class="btn btn-ghost btn-square drawer-button"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16" />
+          <label for="drawer-toggle" class="btn btn-ghost btn-square drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </label>
-          <span class="text-lg font-bold ml-2">Fournisseurs</span>
+          <span class="font-bold text-lg ml-2">Fournisseurs</span>
         </div>
 
-        <main class="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
+        <main class="p-4 md:p-6 flex-1 max-w-7xl mx-auto w-full">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">Fournisseurs</h1>
-            <button onclick="openFournisseurModal()" class="btn btn-primary btn-sm">
+            <button class="btn btn-primary btn-sm"
+                    onclick="openFournisseurModal()">
               + Nouveau fournisseur
             </button>
           </div>
 
           <!-- Filtres -->
-          <div class="flex flex-wrap gap-2 mb-4">
-            <input
-              id="search-input"
-              type="text"
-              placeholder="Rechercher…"
-              class="input input-bordered input-sm w-64"
-              oninput="debouncedSearch()"
-            />
-            <button onclick="resetFilters()" class="btn btn-ghost btn-sm">
-              Réinitialiser
-            </button>
+          <div class="card bg-base-100 shadow mb-4">
+            <div class="card-body py-3">
+              <div class="flex flex-wrap gap-3 items-end">
+                <div class="form-control flex-1 min-w-[200px]">
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Rechercher…"
+                    class="input input-bordered input-sm w-full"
+                    oninput="debouncedSearch()"
+                  />
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Tableau -->
           <div class="card bg-base-100 shadow overflow-x-auto">
-            <table class="table table-sm">
+            <table class="table table-sm table-zebra">
               <thead>
                 <tr>
                   <th>Nom</th>
@@ -100,7 +83,7 @@
               </thead>
               <tbody id="fournisseurs-tbody">
                 <tr>
-                  <td colspan="6" class="text-center text-base-content/40">
+                  <td colspan="6" class="text-center py-8 text-base-content/50">
                     Chargement…
                   </td>
                 </tr>
@@ -109,10 +92,10 @@
           </div>
 
           <!-- Pagination -->
-          <div
-            id="pagination"
-            class="flex items-center justify-between mt-4 text-sm"
-          ></div>
+          <div id="pagination"
+               class="flex items-center justify-between mt-4
+                      text-sm text-base-content/70">
+          </div>
         </main>
       </div>
 
@@ -120,42 +103,58 @@
       <div class="drawer-side z-40">
         <label for="drawer-toggle" class="drawer-overlay"></label>
         <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
-          <div class="p-4 border-b border-base-300 flex items-center gap-3">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-primary flex items-center
                         justify-center text-primary-content font-bold text-sm">
               AQ
             </div>
             <span class="font-bold text-sm">AQ Réparation</span>
           </div>
-          <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-2 pb-1">Activité</p>
-            <a href="/" data-page="index" class="btn btn-ghost btn-sm justify-start w-full">🏠 Dashboard</a>
-            <a href="/reparations.html" data-page="reparations" class="btn btn-ghost btn-sm justify-start w-full">🔧 Réparations</a>
-            <a href="/flips.html" data-page="flips" class="btn btn-ghost btn-sm justify-start w-full">📱 Flips</a>
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Gestion</p>
-            <a href="/achats.html" data-page="achats" class="btn btn-ghost btn-sm justify-start w-full">🛒 Achats</a>
-            <a href="/ventes.html" data-page="ventes" class="btn btn-ghost btn-sm justify-start w-full">💰 Ventes</a>
-            <a href="/stock.html" data-page="stock" class="btn btn-ghost btn-sm justify-start w-full">📦 Stock</a>
-            <a href="/clients.html" data-page="clients" class="btn btn-ghost btn-sm justify-start w-full">👥 Clients</a>
-            <a href="/fournisseurs.html" data-page="fournisseurs" class="btn btn-ghost btn-sm justify-start w-full">🏭 Fournisseurs</a>
-            <a href="/materiel.html" data-page="materiel" class="btn btn-ghost btn-sm justify-start w-full">🛠️ Matériel</a>
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Finance</p>
-            <a href="/budget.html" data-page="budget" class="btn btn-ghost btn-sm justify-start w-full">📊 Budget</a>
-            <a href="/parametres.html" data-page="parametres" class="btn btn-ghost btn-sm justify-start w-full">⚙️ Paramètres</a>
+          <nav class="flex-1 overflow-y-auto py-3 px-2">
+            <ul class="menu menu-sm gap-0.5">
+              <li>
+                <a href="/index.html" data-page="index">🏠 Dashboard</a>
+              </li>
+              <li class="menu-title mt-2">Activité</li>
+              <li><a href="/achats.html" data-page="achats">🛒 Achats</a></li>
+              <li><a href="/ventes.html" data-page="ventes">💰 Ventes</a></li>
+              <li><a href="/flips.html" data-page="flips">📱 Flips</a></li>
+              <li>
+                <a href="/reparations.html" data-page="reparations">🔧 Réparations</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li><a href="/stock.html" data-page="stock">📦 Stock</a></li>
+              <li><a href="/clients.html" data-page="clients">👥 Clients</a></li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs">🏭 Fournisseurs</a>
+              </li>
+              <li>
+                <a href="/materiel.html" data-page="materiel">🛠️ Matériel</a>
+              </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li><a href="/budget.html" data-page="budget">📊 Budget</a></li>
+              <li>
+                <a href="/parametres.html" data-page="parametres">⚙️ Paramètres</a>
+              </li>
+            </ul>
           </nav>
-          <div class="p-3 border-t border-base-300">
-            <div class="flex items-center gap-2 px-3 py-2 mb-2">
-              <div id="sidebar-avatar"
-                class="w-7 h-7 rounded-full bg-secondary flex items-center
-                       justify-center text-secondary-content font-bold text-xs">?</div>
-              <div class="flex-1 min-w-0">
-                <div id="sidebar-username" class="text-sm font-medium truncate">—</div>
-                <div id="sidebar-role" class="text-xs text-base-content/50"></div>
+          <div class="border-t border-base-200 px-4 py-3 flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-primary text-primary-content rounded-full w-8">
+                <span class="text-xs" id="sidebar-avatar">?</span>
               </div>
             </div>
-            <button onclick="logout()"
-              class="btn btn-ghost btn-sm w-full justify-start text-error">
-              🚪 Déconnexion
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate" id="sidebar-username">—</p>
+              <p class="text-xs text-base-content/50" id="sidebar-role">—</p>
+            </div>
+            <button onclick="logout()" class="btn btn-ghost btn-xs" title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3
+                         3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
             </button>
           </div>
         </aside>
@@ -168,7 +167,8 @@
         <h3 id="modal-title" class="font-bold text-lg mb-4">
           Nouveau fournisseur
         </h3>
-        <form id="form-fournisseur" class="space-y-3" onsubmit="submitFournisseur(event)">
+        <form id="form-fournisseur" class="space-y-3"
+              onsubmit="submitFournisseur(event)">
           <div class="form-control">
             <label class="label"><span class="label-text">Nom *</span></label>
             <input id="f-nom" type="text" class="input input-bordered" required />
@@ -176,7 +176,7 @@
           <div class="form-control">
             <label class="label"><span class="label-text">Lien (site web)</span></label>
             <input id="f-lien" type="url" class="input input-bordered"
-              placeholder="https://…" />
+                   placeholder="https://…" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="form-control">
@@ -187,12 +187,14 @@
               <label class="label">
                 <span class="label-text">Délai moyen (jours)</span>
               </label>
-              <input id="f-delai" type="number" min="0" class="input input-bordered" />
+              <input id="f-delai" type="number" min="0"
+                     class="input input-bordered" />
             </div>
           </div>
           <div class="form-control">
             <label class="label"><span class="label-text">Notes</span></label>
-            <textarea id="f-notes" class="textarea textarea-bordered" rows="2"></textarea>
+            <textarea id="f-notes" class="textarea textarea-bordered"
+                      rows="2"></textarea>
           </div>
           <div class="modal-action">
             <button type="button" class="btn btn-ghost"
@@ -203,9 +205,7 @@
           </div>
         </form>
       </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
     <!-- MODAL DÉTAIL -->
@@ -216,12 +216,13 @@
             <h3 id="detail-nom" class="font-bold text-xl"></h3>
             <p id="detail-lien-wrap" class="hidden mt-1">
               <a id="detail-lien" href="#" target="_blank"
-                class="link link-primary text-sm">🔗 Voir le site</a>
+                 class="link link-primary text-sm">🔗 Voir le site</a>
             </p>
           </div>
           <div class="flex gap-2">
-            <button id="detail-edit-btn" onclick="editFromDetail()"
-              class="btn btn-ghost btn-sm">✏️ Modifier</button>
+            <button onclick="editFromDetail()" class="btn btn-ghost btn-sm">
+              ✏️ Modifier
+            </button>
             <form method="dialog">
               <button class="btn btn-ghost btn-sm btn-square">✕</button>
             </form>
@@ -255,17 +256,18 @@
             <span id="detail-created" class="ml-1">—</span>
           </div>
         </div>
+
         <div id="detail-notes-wrap" class="hidden mb-4">
           <p class="text-xs text-base-content/50 mb-1">Notes</p>
           <p id="detail-notes"
-            class="text-sm bg-base-200 rounded-box p-3 whitespace-pre-wrap"></p>
+             class="text-sm bg-base-200 rounded-box p-3 whitespace-pre-wrap"></p>
         </div>
 
         <!-- Historique achats -->
         <div>
           <h4 class="font-semibold text-sm mb-2">Historique des achats</h4>
           <div class="overflow-x-auto max-h-64">
-            <table class="table table-xs">
+            <table class="table table-xs table-zebra">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -286,13 +288,11 @@
           </div>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
     <script type="module">
-      import { requireAuth, logout as _logout } from "/js/auth.js";
+      import { requireAuth, logout as _logout, getCurrentUser } from "/js/auth.js";
       import {
         init,
         openFournisseurModal as _open,
@@ -309,20 +309,20 @@
       window.resetFilters = _reset;
       window.editFromDetail = _edit;
 
+      requireAuth();
+
       document.querySelectorAll("[data-page]").forEach((el) => {
-        if (el.dataset.page === "fournisseurs")
-          el.classList.add("btn-active");
+        if (el.dataset.page === "fournisseurs") el.classList.add("active");
       });
 
-      const user = JSON.parse(localStorage.getItem("current_user") || "{}");
-      if (user.username) {
-        document.getElementById("sidebar-username").textContent = user.username;
-        document.getElementById("sidebar-role").textContent = user.role || "";
+      const user = getCurrentUser();
+      if (user?.username) {
         document.getElementById("sidebar-avatar").textContent =
           user.username[0].toUpperCase();
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
       }
 
-      requireAuth();
       init();
     </script>
   </body>

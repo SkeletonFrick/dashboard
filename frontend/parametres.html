@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
@@ -9,123 +9,53 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Dans le <head> de toutes les pages HTML -->
-<style>
-  /* Sidebar fixe desktop */
-  @media (min-width: 1024px) {
-    .drawer-side {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-  }
-
-  /* Tableau responsive — scroll horizontal sur mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Truncate long textes dans les cellules */
-  td .truncate { max-width: 200px; }
-
-  /* Badge statut lisible sur fond sombre et clair */
-  .badge { white-space: nowrap; }
-
-  /* Toast toujours visible */
-  #toast-container {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 24rem;
-  }
-</style>
+    <style>
+      @media (min-width: 1024px) {
+        .drawer-side { position: sticky; top: 0; height: 100vh; }
+      }
+      .badge { white-space: nowrap; }
+      #toast-container {
+        position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-screen">
     <div class="drawer lg:drawer-open">
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <!-- CONTENU PRINCIPAL -->
       <div class="drawer-content flex flex-col">
+
         <!-- Navbar mobile -->
         <div class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30">
-          <label
-            for="drawer-toggle"
-            class="btn btn-ghost btn-square drawer-button"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+          <label for="drawer-toggle" class="btn btn-ghost btn-square drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </label>
-          <span class="text-lg font-bold ml-2">Paramètres</span>
+          <span class="font-bold text-lg ml-2">Paramètres</span>
         </div>
 
-        <!-- Contenu principal -->
-        <main class="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full">
+        <main class="p-4 md:p-6 flex-1 max-w-5xl mx-auto w-full">
           <h1 class="text-2xl font-bold mb-6">⚙️ Paramètres</h1>
 
           <!-- Tabs -->
           <div role="tablist" class="tabs tabs-bordered mb-6">
-            <button
-              role="tab"
-              class="tab tab-active"
-              data-tab="metier"
-              onclick="switchTab('metier')"
-            >
-              📊 Métier
-            </button>
-            <button
-              role="tab"
-              class="tab"
-              data-tab="societe"
-              onclick="switchTab('societe')"
-            >
-              🏢 Société
-            </button>
-            <button
-              role="tab"
-              class="tab"
-              data-tab="listes"
-              onclick="switchTab('listes')"
-            >
-              📋 Listes
-            </button>
-            <button
-              role="tab"
-              class="tab"
-              data-tab="charges"
-              onclick="switchTab('charges')"
-            >
-              💸 Charges fixes
-            </button>
-            <button
-              role="tab"
-              class="tab"
-              data-tab="notifications"
-              onclick="switchTab('notifications')"
-            >
-              🔔 Notifications
-            </button>
-            <button
-              role="tab"
-              class="tab"
-              data-tab="exports"
-              onclick="switchTab('exports')"
-            >
-              📤 Exports
-            </button>
+            <button role="tab" class="tab tab-active" data-tab="metier"
+                    onclick="switchTab('metier')">📊 Métier</button>
+            <button role="tab" class="tab" data-tab="societe"
+                    onclick="switchTab('societe')">🏢 Société</button>
+            <button role="tab" class="tab" data-tab="listes"
+                    onclick="switchTab('listes')">📋 Listes</button>
+            <button role="tab" class="tab" data-tab="charges"
+                    onclick="switchTab('charges')">💸 Charges</button>
+            <button role="tab" class="tab" data-tab="notifications"
+                    onclick="switchTab('notifications')">🔔 Notifications</button>
+            <button role="tab" class="tab" data-tab="exports"
+                    onclick="switchTab('exports')">📤 Exports</button>
           </div>
 
           <!-- TAB MÉTIER -->
@@ -142,53 +72,33 @@
                       <label class="label">
                         <span class="label-text">URSSAF / Cotisations (%)</span>
                       </label>
-                      <input
-                        id="p-urssaf"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        class="input input-bordered w-full"
-                        required
-                      />
+                      <input id="p-urssaf" type="number" step="0.1"
+                             min="0" max="100"
+                             class="input input-bordered w-full" required />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Réinvestissement (%)</span>
                       </label>
-                      <input
-                        id="p-reinvest"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        class="input input-bordered w-full"
-                        required
-                      />
+                      <input id="p-reinvest" type="number" step="0.1"
+                             min="0" max="100"
+                             class="input input-bordered w-full" required />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Rémunération perso (%)</span>
                       </label>
-                      <input
-                        id="p-perso"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        class="input input-bordered w-full"
-                        required
-                      />
+                      <input id="p-perso" type="number" step="0.1"
+                             min="0" max="100"
+                             class="input input-bordered w-full" required />
                     </div>
                   </div>
 
-                  <!-- Indicateur total temps réel -->
+                  <!-- Indicateur total -->
                   <div class="alert shadow-lg flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"></path>
-                    </svg>
                     <span>Total : </span>
-                    <span id="pct-total" class="font-mono font-bold text-xl">-- %</span>
+                    <span id="pct-total"
+                          class="font-mono font-bold text-xl">-- %</span>
                     <div id="pct-indicator" class="ml-auto badge badge-sm"></div>
                   </div>
 
@@ -197,46 +107,34 @@
                       <label class="label">
                         <span class="label-text">Objectif mensuel (€)</span>
                       </label>
-                      <input
-                        id="p-objectif"
-                        type="number"
-                        step="1"
-                        min="0"
-                        class="input input-bordered w-full"
-                      />
+                      <input id="p-objectif" type="number" step="1" min="0"
+                             class="input input-bordered w-full" />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Garantie réparations (mois)</span>
                       </label>
-                      <input
-                        id="p-garantie"
-                        type="number"
-                        step="1"
-                        min="0"
-                        class="input input-bordered w-full"
-                      />
+                      <input id="p-garantie" type="number" step="1" min="0"
+                             class="input input-bordered w-full" />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Multiplicateur alerte stock</span>
                       </label>
-                      <input
-                        id="p-seuil"
-                        type="number"
-                        step="0.05"
-                        min="1"
-                        class="input input-bordered w-full"
-                      />
+                      <input id="p-seuil" type="number" step="0.05" min="1"
+                             class="input input-bordered w-full" />
                       <div class="label">
-                        <span class="label-text-alt text-sm">ex: 1.25 = alerte à 125% du seuil</span>
+                        <span class="label-text-alt text-xs">
+                          ex: 1.25 = alerte à 125% du seuil
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div class="flex justify-end gap-2">
-                    <button type="button" onclick="loadParams()" class="btn btn-ghost">Annuler</button>
-                    <button type="submit" id="btn-save-metier" class="btn btn-primary">
+                    <button type="button" onclick="loadParams()"
+                            class="btn btn-ghost">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
                       💾 Enregistrer
                     </button>
                   </div>
@@ -253,38 +151,39 @@
                 <form id="form-societe" class="space-y-4">
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
-                      <label class="label">
-                        <span class="label-text">Nom</span>
-                      </label>
-                      <input id="s-nom" type="text" class="input input-bordered w-full" />
+                      <label class="label"><span class="label-text">Nom</span></label>
+                      <input id="s-nom" type="text"
+                             class="input input-bordered w-full" />
                     </div>
                     <div class="form-control">
-                      <label class="label">
-                        <span class="label-text">SIRET</span>
-                      </label>
-                      <input id="s-siret" type="text" class="input input-bordered w-full" />
+                      <label class="label"><span class="label-text">SIRET</span></label>
+                      <input id="s-siret" type="text"
+                             class="input input-bordered w-full" />
                     </div>
                     <div class="form-control md:col-span-2">
                       <label class="label">
                         <span class="label-text">Adresse complète</span>
                       </label>
-                      <textarea id="s-adresse" class="textarea textarea-bordered w-full" rows="2"></textarea>
+                      <textarea id="s-adresse"
+                                class="textarea textarea-bordered w-full"
+                                rows="2"></textarea>
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Téléphone</span>
                       </label>
-                      <input id="s-telephone" type="tel" class="input input-bordered w-full" />
+                      <input id="s-telephone" type="tel"
+                             class="input input-bordered w-full" />
                     </div>
                     <div class="form-control">
-                      <label class="label">
-                        <span class="label-text">Email</span>
-                      </label>
-                      <input id="s-email" type="email" class="input input-bordered w-full" />
+                      <label class="label"><span class="label-text">Email</span></label>
+                      <input id="s-email" type="email"
+                             class="input input-bordered w-full" />
                     </div>
                   </div>
                   <div class="flex justify-end gap-2">
-                    <button type="button" onclick="loadParams()" class="btn btn-ghost">Annuler</button>
+                    <button type="button" onclick="loadParams()"
+                            class="btn btn-ghost">Annuler</button>
                     <button type="submit" class="btn btn-primary">
                       💾 Enregistrer
                     </button>
@@ -297,33 +196,40 @@
           <!-- TAB LISTES -->
           <div id="tab-listes" class="tab-content hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
               <!-- Catégories -->
               <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="card-title">📂 Catégories</h2>
-                    <select id="cat-type-filter" class="select select-bordered select-sm" onchange="loadCategories()">
+                    <select id="cat-type-filter"
+                            class="select select-bordered select-sm"
+                            onchange="loadCategories()">
                       <option value="">Tous types</option>
                       <option value="achat">🛒 Achat</option>
                       <option value="vente">💰 Vente</option>
                       <option value="stock">📦 Stock</option>
                     </select>
                   </div>
-                  <div id="categories-list" class="space-y-2 max-h-72 overflow-y-auto">
+                  <div id="categories-list"
+                       class="space-y-2 max-h-72 overflow-y-auto">
                     <div class="text-center py-8 text-base-content/40">
-                      <span class="loading loading-spinner"></span><br>Chargement…
+                      <span class="loading loading-spinner"></span>
                     </div>
                   </div>
-                  <!-- Formulaire ajout -->
                   <div class="divider my-4">Ajouter</div>
                   <div class="flex flex-col sm:flex-row gap-2">
-                    <select id="new-cat-type" class="select select-sm select-bordered flex-none w-full sm:w-32">
+                    <select id="new-cat-type"
+                            class="select select-sm select-bordered flex-none w-full sm:w-32">
                       <option value="achat">🛒 Achat</option>
                       <option value="vente">💰 Vente</option>
                       <option value="stock">📦 Stock</option>
                     </select>
-                    <input id="new-cat-nom" type="text" placeholder="ex: Écrans iPhone" class="input input-sm input-bordered flex-1" />
-                    <button onclick="addCategorie()" class="btn btn-sm btn-primary flex-none">
+                    <input id="new-cat-nom" type="text"
+                           placeholder="ex: Écrans iPhone"
+                           class="input input-sm input-bordered flex-1" />
+                    <button onclick="addCategorie()"
+                            class="btn btn-sm btn-primary flex-none">
                       ➕ Ajouter
                     </button>
                   </div>
@@ -335,26 +241,32 @@
                 <div class="card-body">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="card-title">🌐 Plateformes</h2>
-                    <select id="plat-type-filter" class="select select-bordered select-sm" onchange="loadPlateformes()">
+                    <select id="plat-type-filter"
+                            class="select select-bordered select-sm"
+                            onchange="loadPlateformes()">
                       <option value="">Tous types</option>
                       <option value="achat">🛒 Achat</option>
                       <option value="vente">💰 Vente</option>
                     </select>
                   </div>
-                  <div id="plateformes-list" class="space-y-2 max-h-72 overflow-y-auto">
+                  <div id="plateformes-list"
+                       class="space-y-2 max-h-72 overflow-y-auto">
                     <div class="text-center py-8 text-base-content/40">
-                      <span class="loading loading-spinner"></span><br>Chargement…
+                      <span class="loading loading-spinner"></span>
                     </div>
                   </div>
-                  <!-- Formulaire ajout -->
                   <div class="divider my-4">Ajouter</div>
                   <div class="flex flex-col sm:flex-row gap-2">
-                    <select id="new-plat-type" class="select select-sm select-bordered flex-none w-full sm:w-32">
+                    <select id="new-plat-type"
+                            class="select select-sm select-bordered flex-none w-full sm:w-32">
                       <option value="achat">🛒 Achat</option>
                       <option value="vente">💰 Vente</option>
                     </select>
-                    <input id="new-plat-nom" type="text" placeholder="ex: LeBonCoin" class="input input-sm input-bordered flex-1" />
-                    <button onclick="addPlateforme()" class="btn btn-sm btn-primary flex-none">
+                    <input id="new-plat-nom" type="text"
+                           placeholder="ex: LeBonCoin"
+                           class="input input-sm input-bordered flex-1" />
+                    <button onclick="addPlateforme()"
+                            class="btn btn-sm btn-primary flex-none">
                       ➕ Ajouter
                     </button>
                   </div>
@@ -363,20 +275,20 @@
             </div>
           </div>
 
-          <!-- TAB CHARGES FIXES -->
+          <!-- TAB CHARGES -->
           <div id="tab-charges" class="tab-content hidden">
             <div class="card bg-base-100 shadow-xl">
               <div class="card-body">
-                <h2 class="card-title">💸 Charges fixes mensuelles</h2>
+                <h2 class="card-title">💸 Charges fixes</h2>
                 <div class="overflow-x-auto">
-                  <table class="table table-sm compact w-full">
+                  <table class="table table-sm table-zebra w-full">
                     <thead>
                       <tr>
                         <th>Nom</th>
-                        <th>Montant</th>
+                        <th class="text-right">Montant</th>
                         <th>Périodicité</th>
-                        <th>Mensualisé</th>
-                        <th>Actif</th>
+                        <th class="text-right">Mensualisé</th>
+                        <th class="text-center">Actif</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -389,34 +301,37 @@
                     </tbody>
                   </table>
                 </div>
-
-                <!-- Ajout charge -->
                 <div class="divider mt-6 mb-4">➕ Nouvelle charge</div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                   <div class="form-control">
                     <label class="label">
                       <span class="label-text text-xs">Nom</span>
                     </label>
-                    <input id="new-charge-nom" type="text" class="input input-sm input-bordered" placeholder="ex: EDF" />
+                    <input id="new-charge-nom" type="text"
+                           class="input input-sm input-bordered"
+                           placeholder="ex: EDF" />
                   </div>
                   <div class="form-control">
                     <label class="label">
                       <span class="label-text text-xs">Montant (€)</span>
                     </label>
-                    <input id="new-charge-montant" type="number" step="0.01" class="input input-sm input-bordered" />
+                    <input id="new-charge-montant" type="number" step="0.01"
+                           class="input input-sm input-bordered" />
                   </div>
                   <div class="form-control">
                     <label class="label">
                       <span class="label-text text-xs">Périodicité</span>
                     </label>
-                    <select id="new-charge-periodicite" class="select select-sm select-bordered">
+                    <select id="new-charge-periodicite"
+                            class="select select-sm select-bordered">
                       <option value="mensuelle">Mensuelle</option>
                       <option value="trimestrielle">Trimestrielle</option>
                       <option value="semestrielle">Semestrielle</option>
                       <option value="annuelle">Annuelle</option>
                     </select>
                   </div>
-                  <button onclick="addCharge()" class="btn btn-sm btn-primary h-10">
+                  <button onclick="addCharge()"
+                          class="btn btn-sm btn-primary h-10">
                     ➕ Ajouter
                   </button>
                 </div>
@@ -432,24 +347,31 @@
                 <form id="form-notifs" class="space-y-4">
                   <div class="form-control">
                     <label class="label cursor-pointer justify-start gap-4">
-                      <input id="n-actif" type="checkbox" class="toggle toggle-lg toggle-primary" />
-                      <span class="label-text font-semibold">Notifications activées</span>
+                      <input id="n-actif" type="checkbox"
+                             class="toggle toggle-lg toggle-primary" />
+                      <span class="label-text font-semibold">
+                        Notifications activées
+                      </span>
                     </label>
                   </div>
-                  
+
                   <div class="divider">📱 Telegram</div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Bot Token</span>
                       </label>
-                      <input id="n-tg-token" type="password" class="input input-bordered font-mono" placeholder="123456:ABC-DEF..." />
+                      <input id="n-tg-token" type="password"
+                             class="input input-bordered font-mono"
+                             placeholder="123456:ABC-DEF..." />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Chat ID</span>
                       </label>
-                      <input id="n-tg-chat" type="text" class="input input-bordered font-mono" placeholder="-1001234567890" />
+                      <input id="n-tg-chat" type="text"
+                             class="input input-bordered font-mono"
+                             placeholder="-1001234567890" />
                     </div>
                   </div>
 
@@ -459,18 +381,22 @@
                       <label class="label">
                         <span class="label-text">Identifiant</span>
                       </label>
-                      <input id="n-fm-user" type="text" class="input input-bordered" placeholder="06XXXXXXXX" />
+                      <input id="n-fm-user" type="text"
+                             class="input input-bordered"
+                             placeholder="06XXXXXXXX" />
                     </div>
                     <div class="form-control">
                       <label class="label">
                         <span class="label-text">Clé API</span>
                       </label>
-                      <input id="n-fm-pass" type="password" class="input input-bordered font-mono" />
+                      <input id="n-fm-pass" type="password"
+                             class="input input-bordered font-mono" />
                     </div>
                   </div>
 
                   <div class="flex justify-end gap-2">
-                    <button type="button" onclick="loadParams()" class="btn btn-ghost">Annuler</button>
+                    <button type="button" onclick="loadParams()"
+                            class="btn btn-ghost">Annuler</button>
                     <button type="submit" class="btn btn-primary">
                       💾 Enregistrer
                     </button>
@@ -480,20 +406,28 @@
             </div>
           </div>
 
-          <!-- TAB EXPORTS (PHASE 3C) -->
+          <!-- TAB EXPORTS -->
           <div id="tab-exports" class="tab-content hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              
+
               <!-- Export Stock CSV -->
-              <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
+              <div class="card bg-base-100 shadow-xl">
                 <div class="card-body items-center text-center p-6">
-                  <div class="w-16 h-16 bg-info rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <div class="w-16 h-16 bg-info rounded-full flex items-center
+                              justify-center mb-4">
                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"></path>
+                      <path fill-rule="evenodd"
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0
+                               01-1-1zm3.293-7.707a1 1 0 011.414 0L9
+                               10.586V3a1 1 0 112 0v7.586l1.293-1.293a1
+                               1 0 111.414 1.414l-3 3a1 1 0 01-1.414
+                               0l-3-3a1 1 0 010-1.414z"/>
                     </svg>
                   </div>
                   <h3 class="card-title text-lg">📊 Stock CSV</h3>
-                  <p class="text-sm text-base-content/60 mb-4">Articles actifs + alertes seuils</p>
+                  <p class="text-sm text-base-content/60 mb-4">
+                    Articles actifs + alertes seuils
+                  </p>
                   <button id="btn-export-stock" class="btn btn-info w-full">
                     📥 Télécharger
                   </button>
@@ -501,15 +435,20 @@
               </div>
 
               <!-- Backup DB -->
-              <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
+              <div class="card bg-base-100 shadow-xl">
                 <div class="card-body items-center text-center p-6">
-                  <div class="w-16 h-16 bg-success rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <div class="w-16 h-16 bg-success rounded-full flex items-center
+                              justify-center mb-4">
                     <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm12 11H4l1-8h10l1 8z"></path>
+                      <path fill-rule="evenodd"
+                            d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0
+                               002-2V6a2 2 0 00-2-2H4zm12 11H4l1-8h10l1 8z"/>
                     </svg>
                   </div>
                   <h3 class="card-title text-lg">💾 Sauvegarde DB</h3>
-                  <p class="text-sm text-base-content/60 mb-4">Copie complète avec timestamp</p>
+                  <p class="text-sm text-base-content/60 mb-4">
+                    Copie complète avec timestamp
+                  </p>
                   <button id="btn-backup-db" class="btn btn-success w-full">
                     🚀 Créer backup
                   </button>
@@ -517,18 +456,25 @@
                 </div>
               </div>
 
-              <!-- Export JSON Complet -->
-              <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all md:col-span-2 lg:col-span-1">
+              <!-- Export JSON -->
+              <div class="card bg-base-100 shadow-xl md:col-span-2 lg:col-span-1">
                 <div class="card-body p-6">
                   <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center">
+                    <div class="w-12 h-12 bg-secondary rounded-xl flex items-center
+                                justify-center">
                       <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"></path>
+                        <path fill-rule="evenodd"
+                              d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2
+                                 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0
+                                 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6
+                                 4a2 2 0 100-4 2 2 0 000 4z"/>
                       </svg>
                     </div>
                     <div>
-                      <h3 class="font-bold text-lg">🌐 Export complet JSON</h3>
-                      <p class="text-sm text-base-content/60">Toutes les données (admin uniquement)</p>
+                      <h3 class="font-bold text-lg">🌐 Export JSON complet</h3>
+                      <p class="text-sm text-base-content/60">
+                        Toutes les données
+                      </p>
                     </div>
                   </div>
                   <button id="btn-export-json" class="btn btn-secondary w-full">
@@ -538,11 +484,12 @@
               </div>
             </div>
 
-            <!-- Liste des backups récents -->
+            <!-- Liste backups -->
             <div class="card bg-base-100 shadow-xl mt-8">
               <div class="card-body">
                 <h3 class="card-title">📋 Backups récents</h3>
-                <div id="backups-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div id="backups-list"
+                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div class="text-center py-12 text-base-content/40">
                     Aucun backup trouvé
                   </div>
@@ -550,95 +497,110 @@
               </div>
             </div>
           </div>
+
         </main>
       </div>
 
-      <!-- SIDEBAR identique aux autres pages -->
+      <!-- SIDEBAR -->
       <div class="drawer-side z-40">
         <label for="drawer-toggle" class="drawer-overlay"></label>
         <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
-          <div class="p-4 border-b border-base-300 flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-content font-bold text-sm">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center
+                        justify-center text-primary-content font-bold text-sm">
               AQ
             </div>
             <span class="font-bold text-sm">AQ Réparation</span>
           </div>
-          <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-2 pb-1">Activité</p>
-            <a href="/" data-page="index" class="btn btn-ghost btn-sm justify-start w-full">🏠 Dashboard</a>
-            <a href="/reparations.html" data-page="reparations" class="btn btn-ghost btn-sm justify-start w-full">🔧 Réparations</a>
-            <a href="/flips.html" data-page="flips" class="btn btn-ghost btn-sm justify-start w-full">📱 Flips</a>
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Gestion</p>
-            <a href="/achats.html" data-page="achats" class="btn btn-ghost btn-sm justify-start w-full">🛒 Achats</a>
-            <a href="/ventes.html" data-page="ventes" class="btn btn-ghost btn-sm justify-start w-full">💰 Ventes</a>
-            <a href="/stock.html" data-page="stock" class="btn btn-ghost btn-sm justify-start w-full">📦 Stock</a>
-            <a href="/clients.html" data-page="clients" class="btn btn-ghost btn-sm justify-start w-full">👥 Clients</a>
-            <a href="/fournisseurs.html" data-page="fournisseurs" class="btn btn-ghost btn-sm justify-start w-full">🏭 Fournisseurs</a>
-            <a href="/materiel.html" data-page="materiel" class="btn btn-ghost btn-sm justify-start w-full">🛠️ Matériel</a>
-            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Finance</p>
-            <a href="/budget.html" data-page="budget" class="btn btn-ghost btn-sm justify-start w-full">📊 Budget</a>
-            <a href="/parametres.html" data-page="parametres" class="btn btn-ghost btn-sm justify-start w-full btn-active">⚙️ Paramètres</a>
+          <nav class="flex-1 overflow-y-auto py-3 px-2">
+            <ul class="menu menu-sm gap-0.5">
+              <li>
+                <a href="/index.html" data-page="index">🏠 Dashboard</a>
+              </li>
+              <li class="menu-title mt-2">Activité</li>
+              <li><a href="/achats.html" data-page="achats">🛒 Achats</a></li>
+              <li><a href="/ventes.html" data-page="ventes">💰 Ventes</a></li>
+              <li><a href="/flips.html" data-page="flips">📱 Flips</a></li>
+              <li>
+                <a href="/reparations.html" data-page="reparations">🔧 Réparations</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li><a href="/stock.html" data-page="stock">📦 Stock</a></li>
+              <li><a href="/clients.html" data-page="clients">👥 Clients</a></li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs">🏭 Fournisseurs</a>
+              </li>
+              <li>
+                <a href="/materiel.html" data-page="materiel">🛠️ Matériel</a>
+              </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li><a href="/budget.html" data-page="budget">📊 Budget</a></li>
+              <li>
+                <a href="/parametres.html" data-page="parametres">⚙️ Paramètres</a>
+              </li>
+            </ul>
           </nav>
-          <div class="p-3 border-t border-base-300">
-            <div class="flex items-center gap-2 px-3 py-2 mb-2">
-              <div id="sidebar-avatar" class="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-secondary-content font-bold text-xs">?</div>
-              <div class="flex-1 min-w-0">
-                <div id="sidebar-username" class="text-sm font-medium truncate">—</div>
-                <div id="sidebar-role" class="text-xs text-base-content/50"></div>
+          <div class="border-t border-base-200 px-4 py-3 flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-primary text-primary-content rounded-full w-8">
+                <span class="text-xs" id="sidebar-avatar">?</span>
               </div>
             </div>
-            <button onclick="logout()" class="btn btn-ghost btn-sm w-full justify-start text-error">🚪 Déconnexion</button>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate" id="sidebar-username">—</p>
+              <p class="text-xs text-base-content/50" id="sidebar-role">—</p>
+            </div>
+            <button onclick="logout()" class="btn btn-ghost btn-xs"
+                    title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3
+                         3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
           </div>
         </aside>
       </div>
     </div>
 
     <script type="module">
-  import {
-    requireAuth,
-    logout as _logout,
-    getCurrentUser,
-  } from "/js/auth.js";
-  import {
-    initParametres,
-    switchTab as _switchTab,
-    loadCategories as _loadCategories,
-    loadPlateformes as _loadPlateformes,
-    addCategorie as _addCategorie,
-    addPlateforme as _addPlateforme,
-    addCharge as _addCharge,
-    setupExports as _setupExports,
-  } from "/js/parametres.js";
+      import { requireAuth, logout as _logout, getCurrentUser } from "/js/auth.js";
+      import {
+        initParametres,
+        switchTab as _switchTab,
+        loadParams as _loadParams,
+        loadCategories as _loadCategories,
+        loadPlateformes as _loadPlateformes,
+        addCategorie as _addCategorie,
+        addPlateforme as _addPlateforme,
+        addCharge as _addCharge,
+      } from "/js/parametres.js";
 
-  // ── Exposition globale AVANT tout appel HTML ──────────────────────────────
-  window.switchTab     = _switchTab;
-  window.loadCategories = _loadCategories;
-  window.loadPlateformes = _loadPlateformes;
-  window.addCategorie  = _addCategorie;
-  window.addPlateforme = _addPlateforme;
-  window.addCharge     = _addCharge;
-  window.setupExports  = _setupExports;
-  window.logout        = _logout;
+      window.logout = _logout;
+      window.switchTab = _switchTab;
+      window.loadParams = _loadParams;
+      window.loadCategories = _loadCategories;
+      window.loadPlateformes = _loadPlateformes;
+      window.addCategorie = _addCategorie;
+      window.addPlateforme = _addPlateforme;
+      window.addCharge = _addCharge;
 
-  // ── Sidebar user info ─────────────────────────────────────────────────────
-  const user = getCurrentUser();
-  if (user?.username) {
-    const el = (id) => document.getElementById(id);
-    el("sidebar-username").textContent = user.username;
-    el("sidebar-role").textContent     = user.role || "";
-    el("sidebar-avatar").textContent   = user.username[0].toUpperCase();
-  }
+      requireAuth();
 
-  // ── Highlight page active ─────────────────────────────────────────────────
-  document.querySelectorAll("[data-page]").forEach((el) => {
-    if (location.pathname.includes("parametres")) {
-      el.classList.toggle("btn-active", el.dataset.page === "parametres");
-    }
-  });
+      document.querySelectorAll("[data-page]").forEach((el) => {
+        if (el.dataset.page === "parametres") el.classList.add("active");
+      });
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-  requireAuth();
-  initParametres();
-</script>
+      const user = getCurrentUser();
+      if (user?.username) {
+        document.getElementById("sidebar-avatar").textContent =
+          user.username[0].toUpperCase();
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
+      }
+
+      initParametres();
+    </script>
   </body>
 </html>

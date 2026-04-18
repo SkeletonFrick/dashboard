@@ -3,21 +3,24 @@ import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "aq_reparation.db")
 
+
 async def get_db():
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         yield db
 
+
 async def init_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         await _create_tables(db)
         await _seed_default_data(db)
         await db.commit()
 
+
 async def _create_tables(db):
 
-    # Utilisateurs
     await db.execute("""
         CREATE TABLE IF NOT EXISTS utilisateurs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +33,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Clients
     await db.execute("""
         CREATE TABLE IF NOT EXISTS clients (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +45,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Fournisseurs
     await db.execute("""
         CREATE TABLE IF NOT EXISTS fournisseurs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +58,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Catégories
     await db.execute("""
         CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +68,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Plateformes
     await db.execute("""
         CREATE TABLE IF NOT EXISTS plateformes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +78,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Paramètres
     await db.execute("""
         CREATE TABLE IF NOT EXISTS parametres (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,20 +87,30 @@ async def _create_tables(db):
         )
     """)
 
-    # Charges fixes
     await db.execute("""
         CREATE TABLE IF NOT EXISTS charges_fixes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nom TEXT NOT NULL,
             montant REAL NOT NULL,
-            periodicite TEXT NOT NULL DEFAULT 'mensuel',
+            periodicite TEXT NOT NULL DEFAULT 'mensuelle',
             actif INTEGER NOT NULL DEFAULT 1,
             notes TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
     """)
 
-    # Achats
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS lots_achat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            nom_lot TEXT NOT NULL,
+            prix_total REAL NOT NULL DEFAULT 0,
+            plateforme TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
     await db.execute("""
         CREATE TABLE IF NOT EXISTS achats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,20 +131,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Lots d'achat
-    await db.execute("""
-        CREATE TABLE IF NOT EXISTS lots_achat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            nom_lot TEXT NOT NULL,
-            prix_total REAL NOT NULL DEFAULT 0,
-            plateforme TEXT,
-            notes TEXT,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-    """)
-
-    # Éléments de lot
     await db.execute("""
         CREATE TABLE IF NOT EXISTS lot_elements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,7 +145,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Ventes
     await db.execute("""
         CREATE TABLE IF NOT EXISTS ventes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,7 +161,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Flips
     await db.execute("""
         CREATE TABLE IF NOT EXISTS flips (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,7 +180,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Pièces utilisées dans les flips
     await db.execute("""
         CREATE TABLE IF NOT EXISTS flip_pieces (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -200,7 +191,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Réparations
     await db.execute("""
         CREATE TABLE IF NOT EXISTS reparations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,7 +215,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Pièces utilisées dans les réparations
     await db.execute("""
         CREATE TABLE IF NOT EXISTS reparation_pieces (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -237,7 +226,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Stock
     await db.execute("""
         CREATE TABLE IF NOT EXISTS stock (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -259,7 +247,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Mouvements de stock
     await db.execute("""
         CREATE TABLE IF NOT EXISTS stock_mouvements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -273,7 +260,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Matériel
     await db.execute("""
         CREATE TABLE IF NOT EXISTS materiel (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -289,7 +275,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Fichiers / justificatifs
     await db.execute("""
         CREATE TABLE IF NOT EXISTS fichiers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,7 +289,6 @@ async def _create_tables(db):
         )
     """)
 
-    # Logs d'activité
     await db.execute("""
         CREATE TABLE IF NOT EXISTS logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -317,7 +301,7 @@ async def _create_tables(db):
         )
     """)
 
-    # Index utiles
+    # Index
     await db.execute("CREATE INDEX IF NOT EXISTS idx_achats_date ON achats(date)")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_achats_type ON achats(type_achat)")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_ventes_date ON ventes(date)")
@@ -328,28 +312,29 @@ async def _create_tables(db):
     await db.execute("CREATE INDEX IF NOT EXISTS idx_fichiers_parent ON fichiers(type_parent, parent_id)")
     await db.execute("CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at)")
 
+
 async def _seed_default_data(db):
-    """Insère les données par défaut si absentes."""
+    """Insère les données par défaut si absentes — exécuté UNE SEULE FOIS."""
 
     params_defaut = [
-        ("urssaf_pct", "0.246"),
-        ("reinvest_pct", "0.30"),
-        ("perso_pct", "0.454"),
-        ("objectif_mensuel", "1000"),       # ✅ était "objectif_marge"
-        ("garantie_mois", "3"),
+        ("urssaf_pct",                  "0.246"),
+        ("reinvest_pct",                "0.30"),
+        ("perso_pct",                   "0.454"),
+        ("objectif_mensuel",            "1000"),
+        ("garantie_mois",               "3"),
         ("seuil_alerte_multiplicateur", "1.25"),
-        ("notifications_actives", "0"),
-        ("notification_canal", ""),
-        ("notification_destinataire", ""),
-        ("societe_nom", "AQ Réparation"),
-        ("societe_telephone", ""),
-        ("societe_email", ""),
-        ("societe_adresse", ""),
-        ("societe_siret", ""),              # ✅ manquait, utilisé dans recu
-        ("telegram_bot_token", ""),         # ✅ manquait, utilisé dans parametres
-        ("telegram_chat_id", ""),           # ✅ manquait
-        ("free_mobile_user", ""),           # ✅ manquait
-        ("free_mobile_pass", ""),           # ✅ manquait
+        ("notifications_actives",       "0"),
+        ("notification_canal",          ""),
+        ("notification_destinataire",   ""),
+        ("societe_nom",                 "AQ Réparation"),
+        ("societe_telephone",           ""),
+        ("societe_email",               ""),
+        ("societe_adresse",             ""),
+        ("societe_siret",               ""),
+        ("telegram_bot_token",          ""),
+        ("telegram_chat_id",            ""),
+        ("free_mobile_user",            ""),
+        ("free_mobile_pass",            ""),
     ]
     for cle, valeur in params_defaut:
         await db.execute(
@@ -357,7 +342,6 @@ async def _seed_default_data(db):
             (cle, valeur),
         )
 
-    # Catégories par défaut — inchangées
     categories_defaut = [
         ("achat", "Smartphone"),
         ("achat", "Tablette"),
@@ -387,7 +371,6 @@ async def _seed_default_data(db):
             (type_cat, nom, i),
         )
 
-    # Plateformes par défaut — inchangées
     plateformes_defaut = [
         ("achat", "eBay"),
         ("achat", "Vinted"),
@@ -410,13 +393,11 @@ async def _seed_default_data(db):
             (type_pf, nom, i),
         )
 
-    # Création admin par défaut
     async with db.execute("SELECT COUNT(*) FROM utilisateurs") as cur:
         count = (await cur.fetchone())[0]
 
     if count == 0:
         from backend.auth import hash_password
-
         await db.execute(
             """
             INSERT INTO utilisateurs (username, password_hash, role, actif)
@@ -425,97 +406,3 @@ async def _seed_default_data(db):
             (hash_password("admin"),),
         )
         print("✅ Utilisateur admin créé (mot de passe : admin) — changez-le !")
-
-    await db.commit()
-    """Insère les données par défaut si absentes."""
-
-    # Paramètres par défaut
-    params_defaut = [
-        ("urssaf_pct", "0.246"),
-        ("reinvest_pct", "0.30"),
-        ("perso_pct", "0.454"),
-        ("objectif_marge", "1000"),
-        ("garantie_mois", "3"),
-        ("seuil_alerte_multiplicateur", "1.25"),
-        ("notifications_actives", "0"),
-        ("notification_canal", ""),
-        ("notification_destinataire", ""),
-        ("societe_nom", "AQ Réparation"),
-        ("societe_telephone", ""),
-        ("societe_email", ""),
-        ("societe_adresse", ""),
-    ]
-    for cle, valeur in params_defaut:
-        await db.execute(
-            "INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)",
-            (cle, valeur),
-        )
-
-    # Catégories par défaut
-    categories_defaut = [
-        ("achat", "Smartphone"),
-        ("achat", "Tablette"),
-        ("achat", "PC portable"),
-        ("achat", "Console"),
-        ("achat", "Accessoire"),
-        ("achat", "Pièce détachée"),
-        ("achat", "Matériel atelier"),
-        ("achat", "Autre"),
-        ("vente", "Smartphone"),
-        ("vente", "Tablette"),
-        ("vente", "PC portable"),
-        ("vente", "Console"),
-        ("vente", "Accessoire"),
-        ("vente", "Autre"),
-        ("stock", "Écran"),
-        ("stock", "Batterie"),
-        ("stock", "Connecteur"),
-        ("stock", "Nappe"),
-        ("stock", "Vitre"),
-        ("stock", "Châssis"),
-        ("stock", "Autre"),
-    ]
-    for i, (type_cat, nom) in enumerate(categories_defaut):
-        await db.execute(
-            "INSERT OR IGNORE INTO categories (type, nom, ordre) VALUES (?, ?, ?)",
-            (type_cat, nom, i),
-        )
-
-    # Plateformes par défaut
-    plateformes_defaut = [
-        ("achat", "eBay"),
-        ("achat", "Vinted"),
-        ("achat", "LeBonCoin"),
-        ("achat", "AliExpress"),
-        ("achat", "Amazon"),
-        ("achat", "Rakuten"),
-        ("achat", "Fournisseur direct"),
-        ("achat", "Autre"),
-        ("vente", "eBay"),
-        ("vente", "Vinted"),
-        ("vente", "LeBonCoin"),
-        ("vente", "Rakuten"),
-        ("vente", "Remise en main propre"),
-        ("vente", "Autre"),
-    ]
-    for i, (type_pf, nom) in enumerate(plateformes_defaut):
-        await db.execute(
-            "INSERT OR IGNORE INTO plateformes (type, nom, ordre) VALUES (?, ?, ?)",
-            (type_pf, nom, i),
-        )
-
-    # --- Création admin par défaut (premier démarrage) ---
-    async with db.execute("SELECT COUNT(*) FROM utilisateurs") as cur:
-        count = (await cur.fetchone())[0]
-
-    if count == 0:
-        from backend.auth import hash_password
-
-        await db.execute(
-            """INSERT INTO utilisateurs (username, password_hash, role, actif)
-               VALUES ('admin', ?, 'admin', 1)""",
-            (hash_password("admin"),),
-        )
-        print("✅ Utilisateur admin créé (mot de passe : admin) — changez-le !")
-
-    await db.commit()

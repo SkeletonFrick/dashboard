@@ -10,10 +10,17 @@ import {
   escHtml
 } from "./app.js";
 
+import {
+  checkboxHtml,
+  printButtonHtml,
+  selectAllHtml,
+  clearSelection,
+} from "./labels.js";
+
 requireAuth();
 
 // ── Sidebar user info ────────────────────────────────────────────────────────
-const u = JSON.parse(localStorage.getItem("currentUser") || "{}");
+const u = JSON.parse(localStorage.getItem("current_user") || "{}");
 const el = (id) => document.getElementById(id);
 if (u.username) {
   el("sidebarUsername").textContent = u.username;
@@ -117,15 +124,19 @@ async function loadFlips() {
   } catch {
     tableEmpty(tbody, 9, "Erreur de chargement");
   }
+  clearSelection();
 }
 window.loadFlips = loadFlips;
 
 function renderTable(items) {
   const tbody = el("flipsTableBody");
   if (!items.length) {
-    tableEmpty(tbody, 9, "Aucun flip");
+    tableEmpty(tbody, 10, "Aucun flip");
     return;
   }
+
+  const ids = items.map((f) => f.id);
+
   tbody.innerHTML = items
     .map((f) => {
       const prixVente = f.prix_vente || 0;
@@ -134,26 +145,43 @@ function renderTable(items) {
         f.statut === "vendu"
           ? `<span class="${marge >= 0 ? "text-success" : "text-error"} font-semibold">${formatEur(marge)}</span>`
           : `<span class="text-base-content/40">—</span>`;
+
       return `
-      <tr class="hover cursor-pointer" onclick="openDetail(${f.id})">
-        <td class="font-mono text-xs text-base-content/50">#${f.id}</td>
-        <td>
-          <div class="font-medium">${escHtml(f.nom)}</div>
-          <div class="text-xs text-base-content/50">${escHtml(f.marque || "")} ${escHtml(f.modele || "")}</div>
-        </td>
-        <td class="font-mono text-xs">${escHtml(f.imei || "—")}</td>
-        <td>${statutBadgeHtml(f.statut)}</td>
-        <td class="text-right">${formatEur(f.prix_achat)}</td>
-        <td class="text-right">${formatEur(f.cout_pieces)}</td>
-        <td class="text-right">${f.statut === "vendu" ? formatEur(prixVente) : "—"}</td>
-        <td class="text-right">${margeHtml}</td>
-        <td onclick="event.stopPropagation()">
-          <div class="flex gap-1 justify-end">
-            <button class="btn btn-ghost btn-xs" onclick="openFlipModal(${f.id})">✏️</button>
-            <button class="btn btn-ghost btn-xs text-error" onclick="deleteFlip(${f.id})">🗑</button>
-          </div>
-        </td>
-      </tr>`;
+        <tr class="hover">
+          <td onclick="event.stopPropagation()">
+            ${checkboxHtml(f.id, "flip")}
+          </td>
+          <td class="font-mono text-xs text-base-content/50 cursor-pointer"
+              onclick="openDetail(${f.id})">#${f.id}</td>
+          <td class="cursor-pointer" onclick="openDetail(${f.id})">
+            <div class="font-medium">${escHtml(f.nom)}</div>
+            <div class="text-xs text-base-content/50">
+              ${escHtml(f.marque || "")} ${escHtml(f.modele || "")}
+            </div>
+          </td>
+          <td class="font-mono text-xs cursor-pointer"
+              onclick="openDetail(${f.id})">${escHtml(f.imei || "—")}</td>
+          <td class="cursor-pointer"
+              onclick="openDetail(${f.id})">${statutBadgeHtml(f.statut)}</td>
+          <td class="text-right cursor-pointer"
+              onclick="openDetail(${f.id})">${formatEur(f.prix_achat)}</td>
+          <td class="text-right cursor-pointer"
+              onclick="openDetail(${f.id})">${formatEur(f.cout_pieces)}</td>
+          <td class="text-right cursor-pointer" onclick="openDetail(${f.id})">
+            ${f.statut === "vendu" ? formatEur(prixVente) : "—"}
+          </td>
+          <td class="text-right cursor-pointer"
+              onclick="openDetail(${f.id})">${margeHtml}</td>
+          <td onclick="event.stopPropagation()">
+            <div class="flex gap-1 justify-end">
+              ${printButtonHtml(f.id, "flip")}
+              <button class="btn btn-ghost btn-xs"
+                onclick="openFlipModal(${f.id})">✏️</button>
+              <button class="btn btn-ghost btn-xs text-error"
+                onclick="deleteFlip(${f.id})">🗑</button>
+            </div>
+          </td>
+        </tr>`;
     })
     .join("");
 }

@@ -1,5 +1,3 @@
-# backend/routers/achats.py — fichier complet corrigé
-
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from typing import Optional
 import aiosqlite
@@ -14,15 +12,12 @@ router = APIRouter(prefix="/api/achats", tags=["achats"])
 logger = logging.getLogger(__name__)
 
 
-# ─────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _get_achat_or_404(db: aiosqlite.Connection, achat_id: int) -> dict:
     async with db.execute(
         """
-        SELECT a.*,
-               f.nom AS fournisseur_nom
+        SELECT a.*, f.nom AS fournisseur_nom
         FROM achats a
         LEFT JOIN fournisseurs f ON f.id = a.fournisseur_id
         WHERE a.id = ?
@@ -38,17 +33,115 @@ async def _get_achat_or_404(db: aiosqlite.Connection, achat_id: int) -> dict:
 async def _log(db, user_id, action, entite_id, details=""):
     await db.execute(
         """
-        INSERT INTO logs
-            (utilisateur_id, action, entite, entite_id, details)
+        INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
         VALUES (?, ?, 'achat', ?, ?)
         """,
         (user_id, action, entite_id, details),
     )
 
 
-# ─────────────────────────────────────────────
-# LISTE
-# ─────────────────────────────────────────────
+# ── Lots — déclarés EN PREMIER pour éviter le conflit avec /{achat_id} ────────
+
+@router.get("/lots/list")
+async def list_lots(
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    async with db.execute(
+        """
+        SELECT l.*,
+               COUNT(le.id)          AS nb_elements,
+               SUM(le.prix_attribue) AS total_attribue
+        FROM lots_achat l
+        LEFT JOIN lot_elements le ON le.lot_id = l.id
+        GROUP BY l.id
+        ORDER BY l.date DESC
+        """
+    ) as cur:
+        return [dict(r) for r in await cur.fetchall()]
+
+
+@router.post("/lots", status_code=201)
+async def create_lot(
+    payload: LotCreate,
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    async with db.execute(
+        """
+        INSERT INTO lots_achat (date, nom_lot, prix_total, plateforme, notes)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (payload.date, payload.nom_lot, payload.prix_total,
+         payload.plateforme, payload.notes),
+    ) as cur:
+        lot_id = cur.lastrowid
+    await db.commit()
+    return {"id": lot_id, "nom_lot": payload.nom_lot}
+
+
+@router.get("/lots/{lot_id}")
+async def get_lot(
+    lot_id: int,
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    async with db.execute(
+        "SELECT * FROM lots_achat WHERE id = ?", (lot_id,)
+    ) as cur:
+        lot = await cur.fetchone()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+
+    async with db.execute(
+        "SELECT * FROM lot_elements WHERE lot_id = ?", (lot_id,)
+    ) as cur:
+        elements = [dict(r) for r in await cur.fetchall()]
+
+    return {**dict(lot), "elements": elements}
+
+
+@router.post("/lots/{lot_id}/elements", status_code=201)
+async def add_lot_element(
+    lot_id: int,
+    payload: LotElementCreate,
+    db: aiosqlite.Connection = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    async with db.execute(
+        "SELECT prix_total FROM lots_achat WHERE id = ?", (lot_id,)
+    ) as cur:
+        lot = await cur.fetchone()
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+
+    async with db.execute(
+        "SELECT COALESCE(SUM(prix_attribue), 0) FROM lot_elements WHERE lot_id = ?",
+        (lot_id,),
+    ) as cur:
+        total_actuel = (await cur.fetchone())[0]
+
+    if total_actuel + payload.prix_attribue > lot["prix_total"] + 0.01:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dépassement du prix total du lot ({lot['prix_total']} €)",
+        )
+
+    async with db.execute(
+        """
+        INSERT INTO lot_elements
+            (lot_id, type_element, nom, prix_attribue, destination)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (lot_id, payload.type_element, payload.nom,
+         payload.prix_attribue, payload.destination),
+    ) as cur:
+        elem_id = cur.lastrowid
+    await db.commit()
+    return {"id": elem_id}
+
+
+# ── Liste ─────────────────────────────────────────────────────────────────────
 
 @router.get("")
 async def list_achats(
@@ -93,17 +186,14 @@ async def list_achats(
         rows = [dict(r) for r in await cur.fetchall()]
 
     async with db.execute(
-        f"SELECT COUNT(*) FROM achats a WHERE {where}",
-        params,
+        f"SELECT COUNT(*) FROM achats a WHERE {where}", params
     ) as cur:
         total = (await cur.fetchone())[0]
 
     return {"items": rows, "total": total, "limit": limit, "offset": offset}
 
 
-# ─────────────────────────────────────────────
-# DÉTAIL
-# ─────────────────────────────────────────────
+# ── Détail ────────────────────────────────────────────────────────────────────
 
 @router.get("/{achat_id}")
 async def get_achat(
@@ -121,17 +211,14 @@ async def get_achat(
 
     if achat.get("lot_id"):
         async with db.execute(
-            "SELECT * FROM lot_elements WHERE lot_id = ?",
-            (achat["lot_id"],),
+            "SELECT * FROM lot_elements WHERE lot_id = ?", (achat["lot_id"],)
         ) as cur:
             achat["lot_elements"] = [dict(r) for r in await cur.fetchall()]
 
     return achat
 
 
-# ─────────────────────────────────────────────
-# CRÉATION
-# ─────────────────────────────────────────────
+# ── Création ──────────────────────────────────────────────────────────────────
 
 @router.post("", status_code=201)
 async def create_achat(
@@ -148,18 +235,10 @@ async def create_achat(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            payload.date,
-            payload.nom,
-            payload.type_achat,
-            payload.categorie,
-            payload.plateforme,
-            payload.fournisseur_id,
-            payload.prix_achat,
-            payload.quantite,
-            payload.est_lot,
-            payload.lot_id,
-            payload.ajout_stock_auto,
-            payload.notes,
+            payload.date, payload.nom, payload.type_achat,
+            payload.categorie, payload.plateforme, payload.fournisseur_id,
+            payload.prix_achat, payload.quantite, payload.est_lot,
+            payload.lot_id, payload.ajout_stock_auto, payload.notes,
         ),
     ) as cur:
         achat_id = cur.lastrowid
@@ -176,9 +255,7 @@ async def create_achat(
     return await _get_achat_or_404(db, achat_id)
 
 
-# ─────────────────────────────────────────────
-# MISE À JOUR
-# ─────────────────────────────────────────────
+# ── Mise à jour ───────────────────────────────────────────────────────────────
 
 @router.put("/{achat_id}")
 async def update_achat(
@@ -193,12 +270,9 @@ async def update_achat(
     if not fields:
         raise HTTPException(status_code=422, detail="Aucun champ à mettre à jour")
 
-    fields["updated_at"] = "datetime('now')"
-    set_clause = ", ".join(
-        f"{k} = datetime('now')" if v == "datetime('now')" else f"{k} = ?"
-        for k, v in fields.items()
-    )
-    values = [v for v in fields.values() if v != "datetime('now')"]
+    set_clause = ", ".join(f"{k} = ?" for k in fields)
+    set_clause += ", updated_at = datetime('now')"
+    values = list(fields.values())
 
     await db.execute(
         f"UPDATE achats SET {set_clause} WHERE id = ?",
@@ -210,9 +284,7 @@ async def update_achat(
     return await _get_achat_or_404(db, achat_id)
 
 
-# ─────────────────────────────────────────────
-# SUPPRESSION
-# ─────────────────────────────────────────────
+# ── Suppression ───────────────────────────────────────────────────────────────
 
 @router.delete("/{achat_id}", status_code=204)
 async def delete_achat(
@@ -238,9 +310,7 @@ async def delete_achat(
     await db.commit()
 
 
-# ─────────────────────────────────────────────
-# INTÉGRATION MANUELLE STOCK
-# ─────────────────────────────────────────────
+# ── Intégration manuelle stock ────────────────────────────────────────────────
 
 @router.post("/{achat_id}/integrer-stock")
 async def integrer_stock(
@@ -254,16 +324,13 @@ async def integrer_stock(
             status_code=400,
             detail="Seuls les achats de type 'piece' peuvent être intégrés au stock",
         )
-
     result = await integrer_achat_stock(db, achat_id, current_user["id"])
     await _log(db, current_user["id"], "integrer_stock", achat_id)
     await db.commit()
     return result
 
 
-# ─────────────────────────────────────────────
-# FICHIERS
-# ─────────────────────────────────────────────
+# ── Fichiers ──────────────────────────────────────────────────────────────────
 
 @router.post("/{achat_id}/fichiers", status_code=201)
 async def upload_fichier(
@@ -284,12 +351,8 @@ async def upload_fichier(
         VALUES ('achat', ?, ?, ?, ?, ?, ?)
         """,
         (
-            achat_id,
-            saved["nom_original"],
-            saved["chemin"],
-            saved["mime_type"],
-            saved.get("taille", 0),
-            categorie,
+            achat_id, saved["nom_original"], saved["chemin"],
+            saved["mime_type"], saved.get("taille", 0), categorie,
         ),
     ) as cur:
         fichier_id = cur.lastrowid
@@ -319,120 +382,3 @@ async def delete_fichier(
     await delete_file(row["chemin"])
     await db.execute("DELETE FROM fichiers WHERE id = ?", (fichier_id,))
     await db.commit()
-
-
-# ─────────────────────────────────────────────
-# LOTS
-# ─────────────────────────────────────────────
-
-@router.get("/lots/list")
-async def list_lots(
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    async with db.execute(
-        """
-        SELECT l.*,
-               COUNT(le.id)          AS nb_elements,
-               SUM(le.prix_attribue) AS total_attribue
-        FROM lots_achat l
-        LEFT JOIN lot_elements le ON le.lot_id = l.id
-        GROUP BY l.id
-        ORDER BY l.date DESC
-        """
-    ) as cur:
-        return [dict(r) for r in await cur.fetchall()]
-
-
-@router.post("/lots", status_code=201)
-async def create_lot(
-    payload: LotCreate,
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    async with db.execute(
-        """
-        INSERT INTO lots_achat
-            (date, nom_lot, prix_total, plateforme, notes)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            payload.date,
-            payload.nom_lot,
-            payload.prix_total,
-            payload.plateforme,
-            payload.notes,
-        ),
-    ) as cur:
-        lot_id = cur.lastrowid
-
-    await db.commit()
-    return {"id": lot_id, "nom_lot": payload.nom_lot}
-
-
-@router.get("/lots/{lot_id}")
-async def get_lot(
-    lot_id: int,
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    async with db.execute(
-        "SELECT * FROM lots_achat WHERE id = ?", (lot_id,)
-    ) as cur:
-        lot = await cur.fetchone()
-    if not lot:
-        raise HTTPException(status_code=404, detail="Lot introuvable")
-
-    async with db.execute(
-        "SELECT * FROM lot_elements WHERE lot_id = ?",
-        (lot_id,),
-    ) as cur:
-        elements = [dict(r) for r in await cur.fetchall()]
-
-    return {**dict(lot), "elements": elements}
-
-
-@router.post("/lots/{lot_id}/elements", status_code=201)
-async def add_lot_element(
-    lot_id: int,
-    payload: LotElementCreate,
-    db: aiosqlite.Connection = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    async with db.execute(
-        "SELECT prix_total FROM lots_achat WHERE id = ?", (lot_id,)
-    ) as cur:
-        lot = await cur.fetchone()
-    if not lot:
-        raise HTTPException(status_code=404, detail="Lot introuvable")
-
-    async with db.execute(
-        "SELECT COALESCE(SUM(prix_attribue), 0) FROM lot_elements WHERE lot_id = ?",
-        (lot_id,),
-    ) as cur:
-        total_actuel = (await cur.fetchone())[0]
-
-    if total_actuel + payload.prix_attribue > lot["prix_total"] + 0.01:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Dépassement du prix total du lot ({lot['prix_total']} €)",
-        )
-
-    async with db.execute(
-        """
-        INSERT INTO lot_elements
-            (lot_id, type_element, nom, prix_attribue, destination)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            lot_id,
-            payload.type_element,
-            payload.nom,
-            payload.prix_attribue,
-            payload.destination,
-        ),
-    ) as cur:
-        elem_id = cur.lastrowid
-
-    await db.commit()
-    return {"id": elem_id}

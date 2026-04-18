@@ -11,6 +11,13 @@ import {
   escHtml,
 } from "./app.js";
 
+import {
+  checkboxHtml,
+  printButtonHtml,
+  selectAllHtml,
+  clearSelection,
+} from "./labels.js";
+
 requireAuth();
 window.logout = logout;
 

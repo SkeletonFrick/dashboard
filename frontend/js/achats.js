@@ -44,8 +44,6 @@ const TYPE_BADGE = {
 // INIT
 // ─────────────────────────────────────────────
 async function init() {
-  renderSidebar();
-  renderUserInfo();
   await Promise.all([loadFournisseurs(), loadPlateformes()]);
   await loadAchats();
 }
@@ -179,8 +177,8 @@ function renderTable() {
           ${TYPE_LABELS[a.type_achat] || a.type_achat}
         </span>
       </td>
-      <td>${a.qte}</td>
-      <td class="font-mono">${formatEur(a.prix)}</td>
+     <td>${a.quantite}</td>
+<td class="font-mono">${formatEur(a.prix_achat)}</td>
       <td class="text-sm">${escHtml(a.fournisseur_nom || "—")}</td>
       <td>
         ${
@@ -246,10 +244,10 @@ window.openDetail = async function (id) {
         <div><span class="font-medium">Type :</span>
           <span class="badge badge-sm ${TYPE_BADGE[a.type_achat] || ""}">${TYPE_LABELS[a.type_achat] || a.type_achat}</span>
         </div>
-        <div><span class="font-medium">Prix :</span> ${formatEur(a.prix)}</div>
-        <div><span class="font-medium">Quantité :</span> ${a.qte}</div>
+        <div><span class="font-medium">Prix :</span> ${formatEur(a.prix_achat)}</div>
+        <div><span class="font-medium">Quantité :</span> ${a.quantite}</div>
         <div><span class="font-medium">Fournisseur :</span> ${escHtml(a.fournisseur_nom || "—")}</div>
-        <div><span class="font-medium">Plateforme :</span> ${escHtml(a.plateforme_nom || "—")}</div>
+        <div><span class="font-medium">Plateforme :</span> ${escHtml(a.plateforme || "—")}</div>
         ${a.notes ? `<div class="col-span-2"><span class="font-medium">Notes :</span> ${escHtml(a.notes)}</div>` : ""}
       </div>
 
@@ -308,11 +306,11 @@ window.openAchatModal = function (achat = null) {
     form.date.value = achat.date?.slice(0, 10) || "";
     form.nom.value = achat.nom || "";
     form.type_achat.value = achat.type_achat || "";
-    form.prix.value = achat.prix ?? "";
-    form.qte.value = achat.qte ?? 1;
+    form.prix.value = achat.prix_achat ?? "";
+    form.qte.value = achat.quantite ?? 1;
     form.notes.value = achat.notes || "";
     if (form.fournisseur_id) form.fournisseur_id.value = achat.fournisseur_id || "";
-    if (form.plateforme_id) form.plateforme_id.value = achat.plateforme_id || "";
+    if (form.plateforme_id) form.plateforme_id.value = achat.plateforme || "";
     form.ajout_stock_auto.checked = !!achat.ajout_stock_auto;
     onTypeChange(form.type_achat);
   } else {
@@ -343,7 +341,7 @@ window.submitAchat = async function (e) {
     date: form.date.value,
     nom: form.nom.value,
     type_achat: form.type_achat.value,
-    prix_achat: parseFloat(form.prix_achat.value),   // ✅ était prix
+    prix_achat: parseFloat(form.prix.value),   // ✅ était prix
     quantite: parseInt(form.qte.value) || 1,          // ✅ était qte (name HTML conservé)
     fournisseur_id: form.fournisseur_id?.value
       ? parseInt(form.fournisseur_id.value)

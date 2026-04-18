@@ -2,7 +2,8 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import date
 
-# --- Auth ---
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
 
 class UserLogin(BaseModel):
     username: str
@@ -21,10 +22,10 @@ class UserOut(BaseModel):
     role: str
     actif: bool
     created_at: str
-    last_login_at: Optional[str] = None 
+    last_login_at: Optional[str] = None
 
 
-# --- Paramètres ---
+# ── Paramètres ────────────────────────────────────────────────────────────────
 
 class ParamUpdate(BaseModel):
     valeur: str
@@ -56,7 +57,7 @@ class ParamsMetier(BaseModel):
         return v
 
 
-# --- Clients ---
+# ── Clients ───────────────────────────────────────────────────────────────────
 
 class ClientCreate(BaseModel):
     nom: str
@@ -72,7 +73,7 @@ class ClientUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-# --- Fournisseurs ---
+# ── Fournisseurs ──────────────────────────────────────────────────────────────
 
 class FournisseurCreate(BaseModel):
     nom: str
@@ -90,20 +91,17 @@ class FournisseurUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-# --- Achats ---
-
-# backend/models.py
-# Remplacer uniquement AchatCreate et AchatUpdate
+# ── Achats ────────────────────────────────────────────────────────────────────
 
 class AchatCreate(BaseModel):
     date: str
     nom: str
     type_achat: str = "autre"
-    categorie: Optional[str] = None       # ✅ string, pas categorie_id
-    plateforme: Optional[str] = None      # ✅ string, pas plateforme_id
+    categorie: Optional[str] = None
+    plateforme: Optional[str] = None
     fournisseur_id: Optional[int] = None
-    prix_achat: float = 0                 # ✅ était prix
-    quantite: int = 1                     # ✅ était qte
+    prix_achat: float = 0
+    quantite: int = 1
     est_lot: bool = False
     lot_id: Optional[int] = None
     ajout_stock_auto: bool = False
@@ -114,17 +112,17 @@ class AchatUpdate(BaseModel):
     date: Optional[str] = None
     nom: Optional[str] = None
     type_achat: Optional[str] = None
-    categorie: Optional[str] = None       # ✅ string
-    plateforme: Optional[str] = None      # ✅ string
-    prix_achat: Optional[float] = Field(default=None, ge=0)  # ✅ était prix
-    quantite: Optional[int] = Field(default=None, ge=1)      # ✅ était qte
+    categorie: Optional[str] = None
+    plateforme: Optional[str] = None
+    prix_achat: Optional[float] = Field(default=None, ge=0)
+    quantite: Optional[int] = Field(default=None, ge=1)
     fournisseur_id: Optional[int] = None
     lot_id: Optional[int] = None
     ajout_stock_auto: Optional[bool] = None
     notes: Optional[str] = None
 
 
-# --- Ventes ---
+# ── Ventes ────────────────────────────────────────────────────────────────────
 
 class VenteCreate(BaseModel):
     date: str
@@ -148,7 +146,7 @@ class VenteUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-# --- Flips ---
+# ── Flips ─────────────────────────────────────────────────────────────────────
 
 class FlipCreate(BaseModel):
     achat_id: Optional[int] = None
@@ -180,7 +178,7 @@ class FlipPieceCreate(BaseModel):
     prix_unitaire: Optional[float] = None
 
 
-# --- Réparations ---
+# ── Réparations ───────────────────────────────────────────────────────────────
 
 class ReparationCreate(BaseModel):
     date_reception: str
@@ -195,6 +193,8 @@ class ReparationCreate(BaseModel):
     statut: str = "recu"
     prix_facture: float = 0
     acompte: float = 0
+    date_restitution: Optional[str] = None
+    date_fin_garantie: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -222,7 +222,7 @@ class ReparationPieceCreate(BaseModel):
     prix_unitaire: Optional[float] = None
 
 
-# --- Stock ---
+# ── Stock ─────────────────────────────────────────────────────────────────────
 
 class StockCreate(BaseModel):
     nom: str
@@ -237,7 +237,6 @@ class StockCreate(BaseModel):
 
 
 class StockUpdate(BaseModel):
-    # quantite absent volontairement — passer par /mouvement
     nom: Optional[str] = None
     categorie: Optional[str] = None
     unite: Optional[str] = None
@@ -262,7 +261,7 @@ class StockCommandeUpdate(BaseModel):
     date_arrivee_prevue: Optional[str] = None
 
 
-# --- Matériel ---
+# ── Matériel ──────────────────────────────────────────────────────────────────
 
 class MaterielCreate(BaseModel):
     article: str
@@ -284,7 +283,7 @@ class MaterielUpdate(BaseModel):
     date_achat: Optional[str] = None
 
 
-# --- Lots ---
+# ── Lots ──────────────────────────────────────────────────────────────────────
 
 class LotCreate(BaseModel):
     date: str

@@ -1,3 +1,5 @@
+from datetime import date as date_type
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.database import get_db
 from backend.auth import get_current_user, require_role
@@ -12,7 +14,7 @@ from backend.services.stock_service import decrementer_stock
 router = APIRouter(prefix="/api/stock", tags=["stock"])
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _get_or_404(db, stock_id: int):
     async with db.execute(
@@ -99,14 +101,15 @@ async def get_alertes(
     ) as cur:
         rows = await cur.fetchall()
     return [dict(r) for r in rows]
-from datetime import date as date_type
+
+
+# ── Commandes en retard ───────────────────────────────────────────────────────
 
 @router.get("/commandes-en-retard")
 async def get_commandes_en_retard(
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
-    """Articles commandés dont la date d'arrivée prévue est dépassée."""
     today = date_type.today().isoformat()
     async with db.execute(
         """
@@ -123,6 +126,24 @@ async def get_commandes_en_retard(
     ) as cur:
         rows = await cur.fetchall()
     return [dict(r) for r in rows]
+
+
+# ── Catégories stock ──────────────────────────────────────────────────────────
+
+@router.get("/categories")
+async def get_categories_stock(
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Retourne les catégories distinctes des articles stock actifs."""
+    async with db.execute(
+        """SELECT DISTINCT categorie FROM stock
+           WHERE actif = 1 AND categorie IS NOT NULL AND categorie != ''
+           ORDER BY categorie ASC"""
+    ) as cur:
+        rows = await cur.fetchall()
+    return [r[0] for r in rows]
+
 
 # ── Détail ────────────────────────────────────────────────────────────────────
 
@@ -159,15 +180,9 @@ async def create_article(
                 unite, reference, emplacement, notes, commande_en_cours)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
         (
-            data.nom,
-            data.categorie,
-            data.quantite,
-            data.stock_minimal,
-            data.fournisseur_id,
-            data.unite,
-            data.reference,
-            data.emplacement,
-            data.notes,
+            data.nom, data.categorie, data.quantite, data.stock_minimal,
+            data.fournisseur_id, data.unite, data.reference,
+            data.emplacement, data.notes,
         ),
     ) as cur:
         stock_id = cur.lastrowid
@@ -204,24 +219,18 @@ async def update_article(
     set_clause += ", updated_at = datetime('now')"
     values = [*fields.values(), stock_id]
 
-    await db.execute(
-        f"UPDATE stock SET {set_clause} WHERE id = ?", values
-    )
+    await db.execute(f"UPDATE stock SET {set_clause} WHERE id = ?", values)
     await _log(db, user["id"], "update", stock_id, str(fields))
     await db.commit()
 
-    # Retourne l'article mis à jour complet
     async with db.execute(
-        """
-        SELECT s.*, f.nom as fournisseur_nom
-        FROM stock s
-        LEFT JOIN fournisseurs f ON f.id = s.fournisseur_id
-        WHERE s.id = ? AND s.actif = 1
-        """,
+        """SELECT s.*, f.nom as fournisseur_nom
+           FROM stock s
+           LEFT JOIN fournisseurs f ON f.id = s.fournisseur_id
+           WHERE s.id = ? AND s.actif = 1""",
         (stock_id,),
     ) as cur:
         row = await cur.fetchone()
-
     return dict(row)
 
 
@@ -251,16 +260,12 @@ async def add_mouvement(
     db=Depends(get_db),
     user=Depends(get_current_user),
 ):
-    article = await _get_or_404(db, stock_id)
+    await _get_or_404(db, stock_id)
 
     if data.type_mouvement == "sortie":
-        # Réutilise le service pour la vérification + traçabilité
         await decrementer_stock(
-            db,
-            stock_id,
-            data.quantite,
-            data.reference_id or 0,
-            data.reference_type or "manuel",
+            db, stock_id, data.quantite,
+            data.reference_id or 0, data.reference_type or "manuel",
         )
     elif data.type_mouvement == "entree":
         await db.execute(
@@ -271,13 +276,8 @@ async def add_mouvement(
             """INSERT INTO stock_mouvements
                    (stock_id, type_mouvement, quantite, motif, reference_id, reference_type)
                VALUES (?, 'entree', ?, ?, ?, ?)""",
-            (
-                stock_id,
-                data.quantite,
-                data.motif or "Entrée manuelle",
-                data.reference_id,
-                data.reference_type,
-            ),
+            (stock_id, data.quantite, data.motif or "Entrée manuelle",
+             data.reference_id, data.reference_type),
         )
     elif data.type_mouvement == "correction":
         if data.quantite < 0:
@@ -295,13 +295,8 @@ async def add_mouvement(
     else:
         raise HTTPException(400, f"Type de mouvement inconnu : {data.type_mouvement}")
 
-    await _log(
-        db,
-        user["id"],
-        "mouvement",
-        stock_id,
-        f"{data.type_mouvement} {data.quantite}",
-    )
+    await _log(db, user["id"], "mouvement", stock_id,
+               f"{data.type_mouvement} {data.quantite}")
     await db.commit()
     return {"ok": True}
 
@@ -334,9 +329,7 @@ async def get_mouvements(
         rows = await cur.fetchall()
 
     return {
-        "total": total,
-        "page": page,
-        "per_page": per_page,
+        "total": total, "page": page, "per_page": per_page,
         "items": [dict(r) for r in rows],
     }
 
@@ -358,20 +351,12 @@ async def update_commande(
                date_arrivee_prevue = ?,
                updated_at = datetime('now')
            WHERE id = ?""",
-        (
-            1 if data.commande_en_cours else 0,
-            data.quantite_commandee or 0,
-            data.date_arrivee_prevue,
-            stock_id,
-        ),
+        (1 if data.commande_en_cours else 0,
+         data.quantite_commandee or 0,
+         data.date_arrivee_prevue, stock_id),
     )
-    await _log(
-        db,
-        user["id"],
-        "commande",
-        stock_id,
-        f"commande_en_cours={data.commande_en_cours}",
-    )
+    await _log(db, user["id"], "commande", stock_id,
+               f"commande_en_cours={data.commande_en_cours}")
     await db.commit()
     return {"ok": True}
 

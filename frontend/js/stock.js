@@ -52,6 +52,7 @@ const STATE = {
 async function init() {
   _restoreFilters();
   await loadFournisseurs();
+  await loadCategories();
   await loadAlertes();
   await loadStock();
 }
@@ -204,6 +205,20 @@ async function loadAlertes() {
 // ── Chargement liste ─────────────────────────────────────────────────────────
 // frontend/js/stock.js
 // Remplacer loadStock() pour sauvegarder les filtres
+
+// ✅ AJOUTER une fonction loadCategories() dans init()
+
+async function loadCategories() {
+  const data = await apiFetch("/api/stock/categories").catch(() => []);
+  const sel = document.getElementById("filter-categorie");
+  if (!sel) return;
+  data.forEach((cat) => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+}
 
 async function loadStock() {
   const tbody = document.getElementById("stock-tbody");

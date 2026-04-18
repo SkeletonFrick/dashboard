@@ -1,4 +1,4 @@
-import { apiFetch, formatEur } from "./app.js";
+import { apiFetch, formatEur, escHtml } from "./app.js";
 
 export async function loadBudget() {
   document.getElementById("budget-loader").classList.remove("hidden");
@@ -169,10 +169,3 @@ function renderHistorique(historique) {
     .join("");
 }
 
-function escHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}

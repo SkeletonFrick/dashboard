@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="night">
+<html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,383 +9,233 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
-    <!-- Dans le <head> de toutes les pages HTML -->
-<style>
-  /* Sidebar fixe desktop */
-  @media (min-width: 1024px) {
-    .drawer-side {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-  }
-
-  /* Tableau responsive — scroll horizontal sur mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Truncate long textes dans les cellules */
-  td .truncate { max-width: 200px; }
-
-  /* Badge statut lisible sur fond sombre et clair */
-  .badge { white-space: nowrap; }
-
-  /* Toast toujours visible */
-  #toast-container {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 24rem;
-  }
-</style>
+    <style>
+      @media (min-width: 1024px) {
+        .drawer-side { position: sticky; top: 0; height: 100vh; }
+      }
+      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      td .truncate { max-width: 200px; }
+      .badge { white-space: nowrap; }
+      #toast-container {
+        position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-screen">
-    <!-- ── Drawer (mobile) + layout principal ── -->
     <div class="drawer lg:drawer-open">
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
 
-      <!-- ── Contenu principal ── -->
+      <!-- CONTENU PRINCIPAL -->
       <div class="drawer-content flex flex-col min-h-screen">
+
         <!-- Navbar mobile -->
-        <div
-          class="navbar bg-base-100 shadow-sm lg:hidden sticky top-0 z-30"
-        >
+        <div class="navbar bg-base-100 shadow-sm lg:hidden sticky top-0 z-30">
           <div class="flex-none">
-            <label
-              for="drawer-toggle"
-              class="btn btn-ghost btn-square drawer-button"
-              aria-label="Menu"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+            <label for="drawer-toggle" class="btn btn-ghost btn-square drawer-button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
               </svg>
             </label>
           </div>
           <div class="flex-1">
             <span class="text-lg font-bold px-2">AQ Réparation</span>
           </div>
-          <div class="flex-none">
-            <button
-              onclick="import('/js/auth.js').then(m => m.logout())"
-              class="btn btn-ghost btn-sm"
-            >
-              Déconnexion
-            </button>
-          </div>
         </div>
 
         <!-- Page content -->
-<!-- frontend/index.html — remplacer tout le contenu de <main> -->
+        <main class="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
 
-<main class="flex-1 p-4 md:p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <button onclick="loadDashboard()"
+              class="btn btn-ghost btn-sm btn-square" title="Rafraîchir">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11
+                         11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+          </div>
 
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Dashboard</h1>
-    <button onclick="loadDashboard()"
-      class="btn btn-ghost btn-sm btn-square" title="Rafraîchir">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor"
-           viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0
-                 00 4.582 9m0 0H9m11 11v-5h-.581m0
-                 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-      </svg>
-    </button>
-  </div>
+          <!-- Bandeau alertes -->
+          <div id="alertes-bandeau" class="hidden space-y-2 mb-6"></div>
 
-  <!-- Bandeau alertes visuelles -->
-  <div id="alertes-bandeau" class="hidden space-y-2 mb-6"></div>
+          <!-- KPI cards -->
+          <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <p class="text-sm text-base-content/60">CA ce mois</p>
+                <p class="text-2xl font-bold text-primary" id="kpi-ca">—</p>
+                <p class="text-xs text-base-content/40">ventes + réparations</p>
+              </div>
+            </div>
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <p class="text-sm text-base-content/60">Marge brute</p>
+                <p class="text-2xl font-bold" id="kpi-benefice">—</p>
+                <p class="text-xs text-base-content/40">après coût d'achat</p>
+              </div>
+            </div>
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <p class="text-sm text-base-content/60">Réparations en cours</p>
+                <p class="text-2xl font-bold text-secondary" id="kpi-reparations">—</p>
+                <p class="text-xs text-base-content/40">hors livrées / annulées</p>
+              </div>
+            </div>
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <p class="text-sm text-base-content/60">Alertes stock</p>
+                <p class="text-2xl font-bold" id="kpi-stock">—</p>
+                <p class="text-xs text-base-content/40">articles sous seuil</p>
+              </div>
+            </div>
+          </div>
 
-  <!-- KPI cards -->
-  <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <p class="text-sm text-base-content/60">CA ce mois</p>
-        <p class="text-2xl font-bold text-primary" id="kpi-ca">—</p>
-        <p class="text-xs text-base-content/40">ventes + réparations</p>
-      </div>
-    </div>
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <p class="text-sm text-base-content/60">Marge brute</p>
-        <p class="text-2xl font-bold" id="kpi-benefice">—</p>
-        <p class="text-xs text-base-content/40">après coût d'achat</p>
-      </div>
-    </div>
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <p class="text-sm text-base-content/60">Réparations en cours</p>
-        <p class="text-2xl font-bold text-secondary" id="kpi-reparations">—</p>
-        <p class="text-xs text-base-content/40">hors livrées / annulées</p>
-      </div>
-    </div>
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <p class="text-sm text-base-content/60">Alertes stock</p>
-        <p class="text-2xl font-bold" id="kpi-stock">—</p>
-        <p class="text-xs text-base-content/40">articles sous seuil</p>
-      </div>
-    </div>
-  </div>
+          <!-- Activité + alertes stock -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <h2 class="font-semibold text-sm mb-2">🔧 Réparations en cours</h2>
+                <div id="activite-reparations">
+                  <p class="text-sm text-base-content/40 text-center py-3">Chargement…</p>
+                </div>
+                <a href="/reparations.html" class="btn btn-ghost btn-xs w-full mt-2">
+                  Voir toutes →
+                </a>
+              </div>
+            </div>
 
-  <!-- Activité + alertes stock -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <h2 class="font-semibold text-sm mb-2">📱 Flips en cours</h2>
+                <div id="activite-flips">
+                  <p class="text-sm text-base-content/40 text-center py-3">Chargement…</p>
+                </div>
+                <a href="/flips.html" class="btn btn-ghost btn-xs w-full mt-2">
+                  Voir tous →
+                </a>
+              </div>
+            </div>
 
-    <!-- Réparations en cours -->
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <h2 class="font-semibold text-sm mb-2">🔧 Réparations en cours</h2>
-        <div id="activite-reparations">
-          <p class="text-sm text-base-content/40 text-center py-3">
-            Chargement…
-          </p>
-        </div>
-        <a href="/reparations.html"
-           class="btn btn-ghost btn-xs w-full mt-2">
-          Voir toutes →
-        </a>
-      </div>
-    </div>
+            <div class="card bg-base-100 shadow">
+              <div class="card-body p-4">
+                <h2 class="font-semibold text-sm mb-2">📦 Stock à surveiller</h2>
+                <div id="alertes-stock-liste" class="space-y-1">
+                  <p class="text-sm text-base-content/40 text-center py-3">Chargement…</p>
+                </div>
+                <a href="/stock.html" class="btn btn-ghost btn-xs w-full mt-2">
+                  Voir le stock →
+                </a>
+              </div>
+            </div>
+          </div>
 
-    <!-- Flips en cours -->
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <h2 class="font-semibold text-sm mb-2">📱 Flips en cours</h2>
-        <div id="activite-flips">
-          <p class="text-sm text-base-content/40 text-center py-3">
-            Chargement…
-          </p>
-        </div>
-        <a href="/flips.html"
-           class="btn btn-ghost btn-xs w-full mt-2">
-          Voir tous →
-        </a>
-      </div>
-    </div>
+          <!-- Dernières ventes -->
+          <div class="card bg-base-100 shadow mb-6">
+            <div class="card-body p-4">
+              <h2 class="font-semibold text-sm mb-2">💰 Dernières ventes</h2>
+              <div id="activite-ventes"></div>
+              <a href="/ventes.html" class="btn btn-ghost btn-xs mt-2">Voir toutes →</a>
+            </div>
+          </div>
 
-    <!-- Alertes stock détail -->
-    <div class="card bg-base-100 shadow">
-      <div class="card-body p-4">
-        <h2 class="font-semibold text-sm mb-2">📦 Stock à surveiller</h2>
-        <div id="alertes-stock-liste" class="space-y-1">
-          <p class="text-sm text-base-content/40 text-center py-3">
-            Chargement…
-          </p>
-        </div>
-        <a href="/stock.html"
-           class="btn btn-ghost btn-xs w-full mt-2">
-          Voir le stock →
-        </a>
-      </div>
-    </div>
+          <!-- Journal -->
+          <div class="card bg-base-100 shadow">
+            <div class="card-body p-4">
+              <h2 class="font-semibold text-sm mb-3">📋 Journal d'activité</h2>
+              <div class="overflow-x-auto">
+                <table class="table table-sm table-zebra w-full">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Action</th>
+                      <th>Entité</th>
+                      <th>Détails</th>
+                      <th>Utilisateur</th>
+                    </tr>
+                  </thead>
+                  <tbody id="journal-tbody">
+                    <tr>
+                      <td colspan="5" class="text-center py-4 text-base-content/40">
+                        Chargement…
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="journal-pagination"
+                   class="flex items-center justify-between mt-3 text-sm">
+              </div>
+            </div>
+          </div>
 
-  </div>
-
-  <!-- Dernières ventes -->
-  <div class="card bg-base-100 shadow mb-6">
-    <div class="card-body p-4">
-      <h2 class="font-semibold text-sm mb-2">💰 Dernières ventes</h2>
-      <div id="activite-ventes"></div>
-      <a href="/ventes.html" class="btn btn-ghost btn-xs mt-2">
-        Voir toutes →
-      </a>
-    </div>
-  </div>
-
-  <!-- Journal d'activité -->
-  <div class="card bg-base-100 shadow">
-    <div class="card-body p-4">
-      <h2 class="font-semibold text-sm mb-3">📋 Journal d'activité</h2>
-      <div class="overflow-x-auto">
-        <table class="table table-xs w-full">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Action</th>
-              <th>Entité</th>
-              <th>Détails</th>
-              <th>Utilisateur</th>
-            </tr>
-          </thead>
-          <tbody id="journal-tbody">
-            <tr>
-              <td colspan="5" class="text-center py-4 text-base-content/40">
-                Chargement…
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="journal-pagination"
-           class="flex items-center justify-between mt-3 text-sm">
-      </div>
-    </div>
-  </div>
-
-</main>
+        </main>
 
         <footer class="footer footer-center p-4 text-base-content/40 text-xs">
           <p>AQ Réparation © 2026</p>
         </footer>
       </div>
 
-      <!-- ── Sidebar ── -->
+      <!-- SIDEBAR -->
       <div class="drawer-side z-40">
-        <label
-          for="drawer-toggle"
-          aria-label="Fermer le menu"
-          class="drawer-overlay"
-        ></label>
-
-        <aside
-          class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl"
-        >
-          <!-- Logo -->
-          <div class="px-6 py-5 border-b border-base-200">
-            <span class="text-xl font-extrabold tracking-tight"
-              >AQ Réparation</span
-            >
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center
+                        justify-center text-primary-content font-bold text-sm">
+              AQ
+            </div>
+            <span class="font-bold text-sm">AQ Réparation</span>
           </div>
-
-          <!-- Navigation -->
-          <nav class="flex-1 overflow-y-auto py-4">
-            <ul class="menu menu-md px-3 gap-0.5">
-              <!-- Dashboard -->
+          <nav class="flex-1 overflow-y-auto py-3 px-2">
+            <ul class="menu menu-sm gap-0.5">
               <li>
-                <a href="/index.html" class="nav-link" data-page="index">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                  Dashboard
-                </a>
+                <a href="/index.html" data-page="index">🏠 Dashboard</a>
               </li>
-
-              <li class="menu-title mt-3">Activité</li>
-
+              <li class="menu-title mt-2">Activité</li>
+              <li><a href="/achats.html" data-page="achats">🛒 Achats</a></li>
+              <li><a href="/ventes.html" data-page="ventes">💰 Ventes</a></li>
+              <li><a href="/flips.html" data-page="flips">📱 Flips</a></li>
               <li>
-                <a href="/achats.html" class="nav-link" data-page="achats">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                  Achats
-                </a>
+                <a href="/reparations.html" data-page="reparations">🔧 Réparations</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li><a href="/stock.html" data-page="stock">📦 Stock</a></li>
+              <li><a href="/clients.html" data-page="clients">👥 Clients</a></li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs">🏭 Fournisseurs</a>
               </li>
               <li>
-                <a href="/ventes.html" class="nav-link" data-page="ventes">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  Ventes
-                </a>
+                <a href="/materiel.html" data-page="materiel">🛠️ Matériel</a>
               </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li><a href="/budget.html" data-page="budget">📊 Budget</a></li>
               <li>
-                <a href="/flips.html" class="nav-link" data-page="flips">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  Flips
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/reparations.html"
-                  class="nav-link"
-                  data-page="reparations"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  Réparations
-                </a>
-              </li>
-
-              <li class="menu-title mt-3">Gestion</li>
-
-              <li>
-                <a href="/stock.html" class="nav-link" data-page="stock">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                  Stock
-                </a>
-              </li>
-              <li>
-                <a href="/clients.html" class="nav-link" data-page="clients">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                  Clients
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/fournisseurs.html"
-                  class="nav-link"
-                  data-page="fournisseurs"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                  Fournisseurs
-                </a>
-              </li>
-              <li>
-                <a href="/materiel.html" class="nav-link" data-page="materiel">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
-                  Matériel
-                </a>
-              </li>
-
-              <li class="menu-title mt-3">Finance</li>
-
-              <li>
-                <a href="/budget.html" class="nav-link" data-page="budget">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                  Budget
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/parametres.html"
-                  class="nav-link"
-                  data-page="parametres"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 4a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                  Paramètres
-                </a>
+                <a href="/parametres.html" data-page="parametres">⚙️ Paramètres</a>
               </li>
             </ul>
           </nav>
-
-          <!-- User info + logout -->
-          <div
-            class="border-t border-base-200 px-4 py-3 flex items-center gap-3"
-          >
+          <div class="border-t border-base-200 px-4 py-3 flex items-center gap-3">
             <div class="avatar placeholder">
-              <div
-                class="bg-primary text-primary-content rounded-full w-8"
-              >
+              <div class="bg-primary text-primary-content rounded-full w-8">
                 <span class="text-xs" id="sidebar-avatar">?</span>
               </div>
             </div>
             <div class="flex-1 min-w-0">
-              <p
-                class="text-sm font-semibold truncate"
-                id="sidebar-username"
-              >
-                …
-              </p>
+              <p class="text-sm font-semibold truncate" id="sidebar-username">—</p>
               <p class="text-xs text-base-content/50" id="sidebar-role">—</p>
             </div>
-            <button
-              onclick="import('/js/auth.js').then(m => m.logout())"
-              class="btn btn-ghost btn-xs"
-              title="Déconnexion"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <button onclick="logout()" class="btn btn-ghost btn-xs" title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3
+                         3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
             </button>
           </div>
         </aside>
@@ -393,26 +243,21 @@
     </div>
 
     <script type="module">
-      import { requireAuth, getCurrentUser } from "/js/auth.js";
+      import { requireAuth, logout as _logout, getCurrentUser } from "/js/auth.js";
 
+      window.logout = _logout;
       requireAuth();
 
-      // Highlight page active
-      const page = location.pathname.replace(/^\/|\.html$/g, "") || "index";
-      document.querySelectorAll(".nav-link").forEach((a) => {
-        if (a.dataset.page === page) a.classList.add("active");
+      document.querySelectorAll("[data-page]").forEach((el) => {
+        if (el.dataset.page === "index") el.classList.add("active");
       });
 
-      // Infos utilisateur dans sidebar
       const user = getCurrentUser();
-      if (user) {
-        document.getElementById("sidebar-username").textContent =
-          user.username ?? "—";
-        document.getElementById("sidebar-role").textContent =
-          user.role ?? "—";
-        document.getElementById("sidebar-avatar").textContent = (
-          user.username?.[0] ?? "?"
-        ).toUpperCase();
+      if (user?.username) {
+        document.getElementById("sidebar-avatar").textContent =
+          user.username[0].toUpperCase();
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
       }
     </script>
     <script type="module" src="/js/dashboard.js"></script>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
@@ -9,101 +9,47 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Dans le <head> de toutes les pages HTML -->
-<style>
-  /* Sidebar fixe desktop */
-  @media (min-width: 1024px) {
-    .drawer-side {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-  }
-
-  /* Tableau responsive — scroll horizontal sur mobile */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Truncate long textes dans les cellules */
-  td .truncate { max-width: 200px; }
-
-  /* Badge statut lisible sur fond sombre et clair */
-  .badge { white-space: nowrap; }
-
-  /* Toast toujours visible */
-  #toast-container {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 24rem;
-  }
-</style>
+    <style>
+      @media (min-width: 1024px) {
+        .drawer-side { position: sticky; top: 0; height: 100vh; }
+      }
+      .badge { white-space: nowrap; }
+      #toast-container {
+        position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem;
+      }
+    </style>
   </head>
   <body class="bg-base-200 min-h-screen">
-    <!-- DRAWER LAYOUT (identique aux autres pages) -->
     <div class="drawer lg:drawer-open">
       <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <!-- CONTENU PRINCIPAL -->
       <div class="drawer-content flex flex-col">
+
         <!-- Navbar mobile -->
-        <div
-          class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30"
-        >
-          <label
-            for="drawer-toggle"
-            class="btn btn-ghost btn-square drawer-button"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+        <div class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30">
+          <label for="drawer-toggle" class="btn btn-ghost btn-square drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </label>
-          <span class="text-lg font-bold ml-2">Budget</span>
+          <span class="font-bold text-lg ml-2">Budget</span>
         </div>
 
-        <!-- Contenu principal -->
         <main class="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">Budget du mois</h1>
             <div class="flex items-center gap-2">
-              <span
-                id="mois-label"
-                class="badge badge-neutral badge-lg"
-              ></span>
-              <button
-                onclick="loadBudget()"
-                class="btn btn-ghost btn-sm btn-square"
-                title="Rafraîchir"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0
-                       00 4.582 9m0 0H9m11 11v-5h-.581m0
-                       0a8.003 8.003 0 01-15.357-2m15.357
-                       2H15"
-                  />
+              <span id="mois-label" class="badge badge-neutral badge-lg"></span>
+              <button onclick="loadBudget()" class="btn btn-ghost btn-sm btn-square"
+                      title="Rafraîchir">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11
+                           11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
               </button>
             </div>
@@ -114,38 +60,24 @@
             <span class="loading loading-spinner loading-lg"></span>
           </div>
 
-          <!-- Contenu budget (masqué pendant chargement) -->
+          <!-- Contenu budget -->
           <div id="budget-content" class="hidden space-y-6">
-            <!-- KPI row -->
+
+            <!-- KPIs -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div class="stat bg-base-100 rounded-box shadow">
                 <div class="stat-title">CA Ventes</div>
-                <div
-                  id="kpi-ca-ventes"
-                  class="stat-value text-primary text-xl"
-                >
-                  —
-                </div>
+                <div id="kpi-ca-ventes" class="stat-value text-primary text-xl">—</div>
                 <div class="stat-desc">mois en cours</div>
               </div>
               <div class="stat bg-base-100 rounded-box shadow">
                 <div class="stat-title">CA Réparations</div>
-                <div
-                  id="kpi-ca-rep"
-                  class="stat-value text-secondary text-xl"
-                >
-                  —
-                </div>
+                <div id="kpi-ca-rep" class="stat-value text-secondary text-xl">—</div>
                 <div id="kpi-nb-rep" class="stat-desc">— livrées</div>
               </div>
               <div class="stat bg-base-100 rounded-box shadow">
                 <div class="stat-title">CA Total</div>
-                <div
-                  id="kpi-ca-total"
-                  class="stat-value text-accent text-xl"
-                >
-                  —
-                </div>
+                <div id="kpi-ca-total" class="stat-value text-accent text-xl">—</div>
                 <div class="stat-desc">ventes + réparations</div>
               </div>
               <div class="stat bg-base-100 rounded-box shadow">
@@ -155,150 +87,89 @@
               </div>
             </div>
 
-            <!-- Objectif + jauge -->
+            <!-- Objectif -->
             <div class="card bg-base-100 shadow">
               <div class="card-body">
                 <div class="flex items-center justify-between mb-2">
-                  <h2 class="card-title text-base">
-                    Objectif mensuel
-                  </h2>
-                  <span
-                    id="objectif-label"
-                    class="font-mono text-sm"
-                  ></span>
+                  <h2 class="card-title text-base">Objectif mensuel</h2>
+                  <span id="objectif-label" class="font-mono text-sm"></span>
                 </div>
-                <progress
-                  id="objectif-progress"
-                  class="progress progress-success w-full"
-                  value="0"
-                  max="100"
-                ></progress>
+                <progress id="objectif-progress"
+                          class="progress progress-success w-full"
+                          value="0" max="100"></progress>
                 <div class="text-right text-xs text-base-content/60 mt-1">
                   <span id="objectif-pct"></span>
                 </div>
               </div>
             </div>
 
-            <!-- Répartition budget -->
+            <!-- Répartition -->
             <div class="card bg-base-100 shadow">
               <div class="card-body">
                 <h2 class="card-title text-base mb-4">
                   Répartition du CA
-                  <span
-                    class="badge badge-ghost badge-sm normal-case font-normal"
-                    >lecture seule — modifiable dans Paramètres</span
-                  >
+                  <span class="badge badge-ghost badge-sm normal-case font-normal">
+                    modifiable dans Paramètres
+                  </span>
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <!-- URSSAF -->
                   <div class="space-y-2">
-                    <div
-                      class="flex justify-between text-sm font-medium"
-                    >
+                    <div class="flex justify-between text-sm font-medium">
                       <span class="flex items-center gap-2">
-                        <span
-                          class="w-3 h-3 rounded-full bg-error inline-block"
-                        ></span>
+                        <span class="w-3 h-3 rounded-full bg-error inline-block"></span>
                         URSSAF / Cotisations
                       </span>
-                      <span id="rp-urssaf-pct" class="text-base-content/60"
-                        >—</span
-                      >
+                      <span id="rp-urssaf-pct" class="text-base-content/60">—</span>
                     </div>
-                    <progress
-                      id="rp-urssaf-bar"
-                      class="progress progress-error w-full"
-                      value="0"
-                      max="100"
-                    ></progress>
-                    <div
-                      id="rp-urssaf-montant"
-                      class="text-right font-mono font-bold text-error"
-                    >
-                      —
-                    </div>
+                    <progress id="rp-urssaf-bar" class="progress progress-error w-full"
+                              value="0" max="100"></progress>
+                    <div id="rp-urssaf-montant"
+                         class="text-right font-mono font-bold text-error">—</div>
                   </div>
-                  <!-- Réinvestissement -->
                   <div class="space-y-2">
-                    <div
-                      class="flex justify-between text-sm font-medium"
-                    >
+                    <div class="flex justify-between text-sm font-medium">
                       <span class="flex items-center gap-2">
-                        <span
-                          class="w-3 h-3 rounded-full bg-warning inline-block"
-                        ></span>
+                        <span class="w-3 h-3 rounded-full bg-warning inline-block"></span>
                         Réinvestissement
                       </span>
-                      <span
-                        id="rp-reinvest-pct"
-                        class="text-base-content/60"
-                        >—</span
-                      >
+                      <span id="rp-reinvest-pct" class="text-base-content/60">—</span>
                     </div>
-                    <progress
-                      id="rp-reinvest-bar"
-                      class="progress progress-warning w-full"
-                      value="0"
-                      max="100"
-                    ></progress>
-                    <div
-                      id="rp-reinvest-montant"
-                      class="text-right font-mono font-bold text-warning"
-                    >
-                      —
-                    </div>
+                    <progress id="rp-reinvest-bar" class="progress progress-warning w-full"
+                              value="0" max="100"></progress>
+                    <div id="rp-reinvest-montant"
+                         class="text-right font-mono font-bold text-warning">—</div>
                   </div>
-                  <!-- Perso -->
                   <div class="space-y-2">
-                    <div
-                      class="flex justify-between text-sm font-medium"
-                    >
+                    <div class="flex justify-between text-sm font-medium">
                       <span class="flex items-center gap-2">
-                        <span
-                          class="w-3 h-3 rounded-full bg-success inline-block"
-                        ></span>
+                        <span class="w-3 h-3 rounded-full bg-success inline-block"></span>
                         Rémunération perso
                       </span>
-                      <span id="rp-perso-pct" class="text-base-content/60"
-                        >—</span
-                      >
+                      <span id="rp-perso-pct" class="text-base-content/60">—</span>
                     </div>
-                    <progress
-                      id="rp-perso-bar"
-                      class="progress progress-success w-full"
-                      value="0"
-                      max="100"
-                    ></progress>
-                    <div
-                      id="rp-perso-montant"
-                      class="text-right font-mono font-bold text-success"
-                    >
-                      —
-                    </div>
+                    <progress id="rp-perso-bar" class="progress progress-success w-full"
+                              value="0" max="100"></progress>
+                    <div id="rp-perso-montant"
+                         class="text-right font-mono font-bold text-success">—</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Charges fixes + net -->
+            <!-- Charges + Net -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Charges fixes -->
               <div class="card bg-base-100 shadow">
                 <div class="card-body">
                   <h2 class="card-title text-base mb-2">
                     Charges fixes
-                    <span
-                      class="badge badge-ghost badge-sm normal-case font-normal"
-                      >mensualisées</span
-                    >
+                    <span class="badge badge-ghost badge-sm normal-case font-normal">
+                      mensualisées
+                    </span>
                   </h2>
                   <table class="table table-xs">
                     <tbody id="charges-tbody">
                       <tr>
-                        <td
-                          colspan="3"
-                          class="text-center text-base-content/40"
-                        >
+                        <td colspan="3" class="text-center text-base-content/40">
                           Chargement…
                         </td>
                       </tr>
@@ -306,30 +177,19 @@
                     <tfoot>
                       <tr class="font-bold border-t border-base-300">
                         <td colspan="2">Total mensuel</td>
-                        <td
-                          id="charges-total"
-                          class="text-right font-mono text-error"
-                        >
-                          —
-                        </td>
+                        <td id="charges-total" class="text-right font-mono text-error">—</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
               </div>
 
-              <!-- Net après charges -->
               <div class="card bg-base-100 shadow">
                 <div class="card-body justify-center items-center text-center">
                   <div class="text-sm text-base-content/60 mb-1">
                     Net disponible après charges
                   </div>
-                  <div
-                    id="net-apres-charges"
-                    class="text-4xl font-bold font-mono"
-                  >
-                    —
-                  </div>
+                  <div id="net-apres-charges" class="text-4xl font-bold font-mono">—</div>
                   <div class="text-xs text-base-content/40 mt-1">
                     Rémunération perso − charges fixes
                   </div>
@@ -343,33 +203,16 @@
                 <h2 class="card-title text-base text-warning">
                   📋 Aide à la déclaration AE
                 </h2>
-                <div
-                  class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2"
-                >
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                   <div class="bg-base-200 rounded-box p-4">
-                    <div class="text-xs text-base-content/60 mb-1">
-                      CA à déclarer (mois)
-                    </div>
-                    <div
-                      id="ae-ca"
-                      class="text-2xl font-bold font-mono text-warning"
-                    >
-                      —
-                    </div>
-                    <div class="text-xs text-base-content/40 mt-1">
-                      Ventes + Réparations
-                    </div>
+                    <div class="text-xs text-base-content/60 mb-1">CA à déclarer</div>
+                    <div id="ae-ca" class="text-2xl font-bold font-mono text-warning">—</div>
+                    <div class="text-xs text-base-content/40 mt-1">Ventes + Réparations</div>
                   </div>
                   <div class="bg-base-200 rounded-box p-4">
-                    <div class="text-xs text-base-content/60 mb-1">
-                      Cotisations estimées
-                    </div>
-                    <div
-                      id="ae-cotisations"
-                      class="text-2xl font-bold font-mono text-error"
-                    >
-                      —
-                    </div>
+                    <div class="text-xs text-base-content/60 mb-1">Cotisations estimées</div>
+                    <div id="ae-cotisations"
+                         class="text-2xl font-bold font-mono text-error">—</div>
                     <div class="text-xs text-base-content/40 mt-1">
                       CA × <span id="ae-taux">—</span>
                     </div>
@@ -378,37 +221,13 @@
                     <div class="text-xs text-base-content/60 mb-1">
                       Versement libératoire IR
                     </div>
-                    <div class="text-2xl font-bold font-mono text-info">
-                      N/A
-                    </div>
-                    <div class="text-xs text-base-content/40 mt-1">
-                      Si non opté
-                    </div>
+                    <div class="text-2xl font-bold font-mono text-info">N/A</div>
+                    <div class="text-xs text-base-content/40 mt-1">Si non opté</div>
                   </div>
                 </div>
-                <div
-                  class="alert alert-warning alert-sm mt-3 text-xs"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="stroke-current shrink-0 h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938
-                         4h13.856c1.54 0
-                         2.502-1.667 1.732-3L13.732
-                         4c-.77-1.333-2.694-1.333-3.464
-                         0L3.34 16c-.77 1.333.192
-                         3 1.732 3z"
-                    />
-                  </svg>
-                  Ces montants sont des estimations. Vérifiez toujours
-                  sur autoentrepreneur.urssaf.fr avant de déclarer.
+                <div class="alert alert-warning alert-sm mt-3 text-xs">
+                  ⚠️ Ces montants sont des estimations. Vérifiez sur
+                  autoentrepreneur.urssaf.fr avant de déclarer.
                 </div>
               </div>
             </div>
@@ -419,156 +238,74 @@
                 <h2 class="card-title text-base mb-4">
                   Historique CA — 12 derniers mois
                 </h2>
-                <div
-                  id="historique-bars"
-                  class="flex items-end gap-1 h-32 w-full"
-                >
-                  <!-- barres générées en JS -->
-                </div>
-                <div
-                  id="historique-labels"
-                  class="flex gap-1 w-full mt-1 text-xs text-base-content/40"
-                ></div>
+                <div id="historique-bars"
+                     class="flex items-end gap-1 h-32 w-full"></div>
+                <div id="historique-labels"
+                     class="flex gap-1 w-full mt-1 text-xs text-base-content/40"></div>
               </div>
             </div>
+
           </div>
           <!-- /#budget-content -->
         </main>
       </div>
 
-      <!-- SIDEBAR (identique aux autres pages) -->
+      <!-- SIDEBAR -->
       <div class="drawer-side z-40">
-        <label
-          for="drawer-toggle"
-          class="drawer-overlay"
-        ></label>
-        <aside
-          class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl"
-        >
-          <div
-            class="p-4 border-b border-base-300 flex items-center gap-3"
-          >
-            <div
-              class="w-8 h-8 rounded-full bg-primary flex items-center
-                     justify-center text-primary-content font-bold text-sm"
-            >
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
+          <div class="px-5 py-4 border-b border-base-200 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center
+                        justify-center text-primary-content font-bold text-sm">
               AQ
             </div>
             <span class="font-bold text-sm">AQ Réparation</span>
           </div>
-          <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-            <p
-              class="text-xs text-base-content/40 uppercase font-semibold
-                     px-3 pt-2 pb-1"
-            >
-              Activité
-            </p>
-            <a
-              href="/"
-              data-page="index"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >🏠 Dashboard</a
-            >
-            <a
-              href="/reparations.html"
-              data-page="reparations"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >🔧 Réparations</a
-            >
-            <a
-              href="/flips.html"
-              data-page="flips"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >📱 Flips</a
-            >
-            <p
-              class="text-xs text-base-content/40 uppercase font-semibold
-                     px-3 pt-3 pb-1"
-            >
-              Gestion
-            </p>
-            <a
-              href="/achats.html"
-              data-page="achats"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >🛒 Achats</a
-            >
-            <a
-              href="/ventes.html"
-              data-page="ventes"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >💰 Ventes</a
-            >
-            <a
-              href="/stock.html"
-              data-page="stock"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >📦 Stock</a
-            >
-            <a
-              href="/clients.html"
-              data-page="clients"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >👥 Clients</a
-            >
-            <a
-              href="/fournisseurs.html"
-              data-page="fournisseurs"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >🏭 Fournisseurs</a
-            >
-            <a
-              href="/materiel.html"
-              data-page="materiel"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >🛠️ Matériel</a
-            >
-            <p
-              class="text-xs text-base-content/40 uppercase font-semibold
-                     px-3 pt-3 pb-1"
-            >
-              Finance
-            </p>
-            <a
-              href="/budget.html"
-              data-page="budget"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >📊 Budget</a
-            >
-            <a
-              href="/parametres.html"
-              data-page="parametres"
-              class="btn btn-ghost btn-sm justify-start w-full"
-              >⚙️ Paramètres</a
-            >
+          <nav class="flex-1 overflow-y-auto py-3 px-2">
+            <ul class="menu menu-sm gap-0.5">
+              <li>
+                <a href="/index.html" data-page="index">🏠 Dashboard</a>
+              </li>
+              <li class="menu-title mt-2">Activité</li>
+              <li><a href="/achats.html" data-page="achats">🛒 Achats</a></li>
+              <li><a href="/ventes.html" data-page="ventes">💰 Ventes</a></li>
+              <li><a href="/flips.html" data-page="flips">📱 Flips</a></li>
+              <li>
+                <a href="/reparations.html" data-page="reparations">🔧 Réparations</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li><a href="/stock.html" data-page="stock">📦 Stock</a></li>
+              <li><a href="/clients.html" data-page="clients">👥 Clients</a></li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs">🏭 Fournisseurs</a>
+              </li>
+              <li>
+                <a href="/materiel.html" data-page="materiel">🛠️ Matériel</a>
+              </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li><a href="/budget.html" data-page="budget">📊 Budget</a></li>
+              <li>
+                <a href="/parametres.html" data-page="parametres">⚙️ Paramètres</a>
+              </li>
+            </ul>
           </nav>
-          <div class="p-3 border-t border-base-300">
-            <div class="flex items-center gap-2 px-3 py-2 mb-2">
-              <div
-                id="sidebar-avatar"
-                class="w-7 h-7 rounded-full bg-secondary flex items-center
-                       justify-center text-secondary-content font-bold text-xs"
-              >
-                ?
-              </div>
-              <div class="flex-1 min-w-0">
-                <div
-                  id="sidebar-username"
-                  class="text-sm font-medium truncate"
-                >
-                  —
-                </div>
-                <div
-                  id="sidebar-role"
-                  class="text-xs text-base-content/50"
-                ></div>
+          <div class="border-t border-base-200 px-4 py-3 flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-primary text-primary-content rounded-full w-8">
+                <span class="text-xs" id="sidebar-avatar">?</span>
               </div>
             </div>
-            <button
-              onclick="logout()"
-              class="btn btn-ghost btn-sm w-full justify-start text-error"
-            >
-              🚪 Déconnexion
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate" id="sidebar-username">—</p>
+              <p class="text-xs text-base-content/50" id="sidebar-role">—</p>
+            </div>
+            <button onclick="logout()" class="btn btn-ghost btn-xs" title="Déconnexion">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3
+                         3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
             </button>
           </div>
         </aside>
@@ -576,35 +313,25 @@
     </div>
 
     <script type="module">
-      import { requireAuth, logout as _logout } from "/js/auth.js";
+      import { requireAuth, logout as _logout, getCurrentUser } from "/js/auth.js";
       import { loadBudget as _loadBudget } from "/js/budget.js";
+
       window.logout = _logout;
       window.loadBudget = _loadBudget;
+      requireAuth();
 
-      // Highlight page active
       document.querySelectorAll("[data-page]").forEach((el) => {
-        if (
-          el.dataset.page === "budget" ||
-          location.pathname.includes("budget")
-        ) {
-          el.classList.add("btn-active");
-        }
+        if (el.dataset.page === "budget") el.classList.add("active");
       });
 
-      // Infos utilisateur sidebar
-      const user = JSON.parse(
-        localStorage.getItem("current_user") || "{}"
-      );
-      if (user.username) {
-        document.getElementById("sidebar-username").textContent =
-          user.username;
-        document.getElementById("sidebar-role").textContent =
-          user.role || "";
+      const user = getCurrentUser();
+      if (user?.username) {
         document.getElementById("sidebar-avatar").textContent =
           user.username[0].toUpperCase();
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
       }
 
-      requireAuth();
       _loadBudget();
     </script>
   </body>

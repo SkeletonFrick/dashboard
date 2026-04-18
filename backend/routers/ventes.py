@@ -28,11 +28,9 @@ async def list_ventes(
         conditions.append("(v.nom LIKE ? OR v.notes LIKE ?)")
         like = f"%{search}%"
         params.extend([like, like])
-
     if categorie:
         conditions.append("v.categorie = ?")
         params.append(categorie)
-
     if plateforme:
         conditions.append("v.plateforme = ?")
         params.append(plateforme)
@@ -63,7 +61,6 @@ async def list_ventes(
     items = []
     for r in rows:
         d = dict(r)
-        # Calcul marge selon source
         if d.get("flip_id") and d.get("flip_prix_achat") is not None:
             cout = (d["flip_prix_achat"] or 0) + (d["flip_cout_pieces"] or 0)
             d["marge"] = d["prix_vente"] - cout
@@ -85,39 +82,24 @@ async def get_stats(
 ):
     par_plateforme = await db.execute_fetchall(
         """
-        SELECT plateforme,
-               COUNT(*) as nb,
-               SUM(prix_vente) as ca
+        SELECT plateforme, COUNT(*) as nb, SUM(prix_vente) as ca
         FROM ventes
         WHERE plateforme IS NOT NULL AND plateforme != ''
-        GROUP BY plateforme
-        ORDER BY ca DESC
-        """,
-        [],
+        GROUP BY plateforme ORDER BY ca DESC
+        """, [],
     )
-
     par_categorie = await db.execute_fetchall(
         """
-        SELECT categorie,
-               COUNT(*) as nb,
-               SUM(prix_vente) as ca
+        SELECT categorie, COUNT(*) as nb, SUM(prix_vente) as ca
         FROM ventes
         WHERE categorie IS NOT NULL AND categorie != ''
-        GROUP BY categorie
-        ORDER BY ca DESC
-        """,
-        [],
+        GROUP BY categorie ORDER BY ca DESC
+        """, [],
     )
-
     totaux = await db.execute_fetchall(
-        """
-        SELECT COUNT(*) as nb,
-               COALESCE(SUM(prix_vente), 0) as ca_total
-        FROM ventes
-        """,
+        "SELECT COUNT(*) as nb, COALESCE(SUM(prix_vente), 0) as ca_total FROM ventes",
         [],
     )
-
     return {
         "totaux": dict(totaux[0]) if totaux else {},
         "par_plateforme": [dict(r) for r in par_plateforme],
@@ -150,11 +132,7 @@ async def get_vente(
         raise HTTPException(status_code=404, detail="Vente introuvable")
 
     fichiers = await db.execute_fetchall(
-        """
-        SELECT * FROM fichiers
-        WHERE type_parent = 'vente' AND parent_id = ?
-        ORDER BY created_at ASC
-        """,
+        "SELECT * FROM fichiers WHERE type_parent = 'vente' AND parent_id = ? ORDER BY created_at ASC",
         [vente_id],
     )
 
@@ -179,7 +157,6 @@ async def create_vente(
     db: aiosqlite.Connection = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    # Si lié à un flip → mettre à jour flip.vente_id + statut vendu
     if payload.flip_id:
         flip_rows = await db.execute_fetchall(
             "SELECT id, statut FROM flips WHERE id = ?", [payload.flip_id]
@@ -193,37 +170,22 @@ async def create_vente(
                             prix_vente, achat_id, flip_id, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        [
-            payload.date,
-            payload.nom,
-            payload.categorie,
-            payload.plateforme,
-            payload.prix_vente,
-            payload.achat_id,
-            payload.flip_id,
-            payload.notes,
-        ],
+        [payload.date, payload.nom, payload.categorie, payload.plateforme,
+         payload.prix_vente, payload.achat_id, payload.flip_id, payload.notes],
     )
     await db.commit()
     vente_id = cur.lastrowid
 
-    # Lier le flip à cette vente et passer en "vendu"
     if payload.flip_id:
         await db.execute(
-            """
-            UPDATE flips
-            SET vente_id = ?, statut = 'vendu',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """,
+            """UPDATE flips SET vente_id = ?, statut = 'vendu',
+               updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
             [vente_id, payload.flip_id],
         )
 
     await db.execute(
-        """
-        INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
-        VALUES (?, 'create', 'vente', ?, ?)
-        """,
+        """INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
+           VALUES (?, 'create', 'vente', ?, ?)""",
         [current_user["id"], vente_id, json.dumps({"nom": payload.nom})],
     )
     await db.commit()
@@ -260,10 +222,8 @@ async def update_vente(
         vals,
     )
     await db.execute(
-        """
-        INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
-        VALUES (?, 'update', 'vente', ?, ?)
-        """,
+        """INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
+           VALUES (?, 'update', 'vente', ?, ?)""",
         [current_user["id"], vente_id, json.dumps(data)],
     )
     await db.commit()
@@ -290,15 +250,11 @@ async def delete_vente(
 
     vente = dict(rows[0])
 
-    # Délier le flip si besoin
     if vente.get("flip_id"):
         await db.execute(
-            """
-            UPDATE flips
-            SET vente_id = NULL, statut = 'pret_a_vendre',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND vente_id = ?
-            """,
+            """UPDATE flips SET vente_id = NULL, statut = 'pret_a_vendre',
+               updated_at = CURRENT_TIMESTAMP
+               WHERE id = ? AND vente_id = ?""",
             [vente["flip_id"], vente_id],
         )
 
@@ -307,7 +263,7 @@ async def delete_vente(
         [vente_id],
     )
     for f in fichiers:
-        delete_file(f["chemin"])
+        await delete_file(f["chemin"])  # ✅ await ajouté
 
     await db.execute(
         "DELETE FROM fichiers WHERE type_parent = 'vente' AND parent_id = ?",
@@ -315,10 +271,8 @@ async def delete_vente(
     )
     await db.execute("DELETE FROM ventes WHERE id = ?", [vente_id])
     await db.execute(
-        """
-        INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
-        VALUES (?, 'delete', 'vente', ?, ?)
-        """,
+        """INSERT INTO logs (utilisateur_id, action, entite, entite_id, details)
+           VALUES (?, 'delete', 'vente', ?, ?)""",
         [current_user["id"], vente_id, json.dumps({"vente_id": vente_id})],
     )
     await db.commit()
@@ -342,18 +296,12 @@ async def upload_fichier(
     saved = await save_upload(file, "vente", vente_id)
 
     cur = await db.execute(
-        """
-        INSERT INTO fichiers
-            (type_parent, parent_id, nom_original, chemin, mime_type, taille, categorie)
-        VALUES ('vente', ?, ?, ?, ?, ?, 'justificatif')
-        """,
-        [
-            vente_id,
-            saved["nom_original"],
-            saved["chemin"],
-            saved["mime_type"],
-            saved["taille"],
-        ],
+        """INSERT INTO fichiers
+               (type_parent, parent_id, nom_original, chemin,
+                mime_type, taille, categorie)
+           VALUES ('vente', ?, ?, ?, ?, ?, 'justificatif')""",
+        [vente_id, saved["nom_original"], saved["chemin"],
+         saved["mime_type"], saved["taille"]],
     )
     await db.commit()
 
@@ -371,15 +319,13 @@ async def delete_fichier(
     current_user: dict = Depends(get_current_user),
 ):
     rows = await db.execute_fetchall(
-        """
-        SELECT * FROM fichiers
-        WHERE id = ? AND type_parent = 'vente' AND parent_id = ?
-        """,
+        """SELECT * FROM fichiers
+           WHERE id = ? AND type_parent = 'vente' AND parent_id = ?""",
         [fichier_id, vente_id],
     )
     if not rows:
         raise HTTPException(status_code=404, detail="Fichier introuvable")
 
-    delete_file(rows[0]["chemin"])
+    await delete_file(rows[0]["chemin"])  # ✅ await ajouté
     await db.execute("DELETE FROM fichiers WHERE id = ?", [fichier_id])
     await db.commit()

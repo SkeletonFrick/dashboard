@@ -1,5 +1,3 @@
-# backend/auth.py
-
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -14,7 +12,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 heures
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer_scheme = HTTPBearer(auto_error=False)
-
 
 
 def hash_password(password: str) -> str:
@@ -47,9 +44,7 @@ def decode_token(token: str) -> dict:
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
-        bearer_scheme
-    ),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ):
     """Dépendance FastAPI — injecte l'utilisateur courant depuis le JWT."""
     if not credentials:
@@ -58,8 +53,19 @@ async def get_current_user(
             detail="Non authentifié",
         )
     payload = decode_token(credentials.credentials)
+
+    # sub est stocké en string dans le JWT — on le convertit en int
+    raw_id = payload.get("sub")
+    try:
+        user_id = int(raw_id)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token invalide",
+        )
+
     return {
-        "id": payload.get("sub"),
+        "id": user_id,
         "username": payload.get("username"),
         "role": payload.get("role"),
     }
