@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matériel — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-100 shadow lg:hidden sticky top-0 z-30">
+          <label
+            for="drawer-toggle"
+            class="btn btn-ghost btn-square drawer-button"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </label>
+          <span class="text-lg font-bold ml-2">Matériel</span>
+        </div>
+
+        <main class="flex-1 p-4 md:p-6 max-w-6xl mx-auto w-full">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Matériel à acquérir</h1>
+            <button onclick="openMaterielModal()" class="btn btn-primary btn-sm">
+              + Ajouter
+            </button>
+          </div>
+
+          <!-- Filtres -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Rechercher…"
+              class="input input-bordered input-sm w-56"
+              oninput="debouncedSearch()"
+            />
+            <select
+              id="filter-statut"
+              class="select select-bordered select-sm"
+              onchange="applyFilters()"
+            >
+              <option value="">Tous statuts</option>
+              <option value="a_acheter">À acheter</option>
+              <option value="achete">Acheté</option>
+              <option value="abandonne">Abandonné</option>
+            </select>
+            <select
+              id="filter-priorite"
+              class="select select-bordered select-sm"
+              onchange="applyFilters()"
+            >
+              <option value="">Toutes priorités</option>
+              <option value="haute">Haute</option>
+              <option value="normale">Normale</option>
+              <option value="basse">Basse</option>
+            </select>
+            <button onclick="resetFilters()" class="btn btn-ghost btn-sm">
+              Réinitialiser
+            </button>
+          </div>
+
+          <!-- Tableau -->
+          <div class="card bg-base-100 shadow overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Priorité</th>
+                  <th>Article</th>
+                  <th>Prix estimé</th>
+                  <th>Statut</th>
+                  <th>Date achat</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="materiel-tbody">
+                <tr>
+                  <td colspan="6" class="text-center text-base-content/40">
+                    Chargement…
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div id="pagination"
+            class="flex items-center justify-between mt-4 text-sm"></div>
+        </main>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
+          <div class="p-4 border-b border-base-300 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary flex items-center
+                        justify-center text-primary-content font-bold text-sm">
+              AQ
+            </div>
+            <span class="font-bold text-sm">AQ Réparation</span>
+          </div>
+          <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-2 pb-1">Activité</p>
+            <a href="/" data-page="index" class="btn btn-ghost btn-sm justify-start w-full">🏠 Dashboard</a>
+            <a href="/reparations.html" data-page="reparations" class="btn btn-ghost btn-sm justify-start w-full">🔧 Réparations</a>
+            <a href="/flips.html" data-page="flips" class="btn btn-ghost btn-sm justify-start w-full">📱 Flips</a>
+            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Gestion</p>
+            <a href="/achats.html" data-page="achats" class="btn btn-ghost btn-sm justify-start w-full">🛒 Achats</a>
+            <a href="/ventes.html" data-page="ventes" class="btn btn-ghost btn-sm justify-start w-full">💰 Ventes</a>
+            <a href="/stock.html" data-page="stock" class="btn btn-ghost btn-sm justify-start w-full">📦 Stock</a>
+            <a href="/clients.html" data-page="clients" class="btn btn-ghost btn-sm justify-start w-full">👥 Clients</a>
+            <a href="/fournisseurs.html" data-page="fournisseurs" class="btn btn-ghost btn-sm justify-start w-full">🏭 Fournisseurs</a>
+            <a href="/materiel.html" data-page="materiel" class="btn btn-ghost btn-sm justify-start w-full">🛠️ Matériel</a>
+            <p class="text-xs text-base-content/40 uppercase font-semibold px-3 pt-3 pb-1">Finance</p>
+            <a href="/budget.html" data-page="budget" class="btn btn-ghost btn-sm justify-start w-full">📊 Budget</a>
+            <a href="/parametres.html" data-page="parametres" class="btn btn-ghost btn-sm justify-start w-full">⚙️ Paramètres</a>
+          </nav>
+          <div class="p-3 border-t border-base-300">
+            <div class="flex items-center gap-2 px-3 py-2 mb-2">
+              <div id="sidebar-avatar"
+                class="w-7 h-7 rounded-full bg-secondary flex items-center
+                       justify-center text-secondary-content font-bold text-xs">?</div>
+              <div class="flex-1 min-w-0">
+                <div id="sidebar-username" class="text-sm font-medium truncate">—</div>
+                <div id="sidebar-role" class="text-xs text-base-content/50"></div>
+              </div>
+            </div>
+            <button onclick="logout()"
+              class="btn btn-ghost btn-sm w-full justify-start text-error">
+              🚪 Déconnexion
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- MODAL CRÉATION / ÉDITION -->
+    <dialog id="modal-materiel" class="modal">
+      <div class="modal-box w-full max-w-lg">
+        <h3 id="modal-title" class="font-bold text-lg mb-4">Ajouter du matériel</h3>
+        <form id="form-materiel" class="space-y-3" onsubmit="submitMateriel(event)">
+          <div class="form-control">
+            <label class="label"><span class="label-text">Article *</span></label>
+            <input id="m-article" type="text" class="input input-bordered" required />
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text">Lien (URL)</span></label>
+            <input id="m-lien" type="url" class="input input-bordered"
+              placeholder="https://…" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Prix estimé (€)</span></label>
+              <input id="m-prix" type="number" step="0.01" min="0"
+                class="input input-bordered" />
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Priorité</span></label>
+              <select id="m-priorite" class="select select-bordered">
+                <option value="haute">🔴 Haute</option>
+                <option value="normale" selected>🟡 Normale</option>
+                <option value="basse">🟢 Basse</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Statut</span></label>
+              <select id="m-statut" class="select select-bordered"
+                onchange="toggleDateAchat()">
+                <option value="a_acheter">À acheter</option>
+                <option value="achete">Acheté</option>
+                <option value="abandonne">Abandonné</option>
+              </select>
+            </div>
+            <div class="form-control" id="date-achat-wrap">
+              <label class="label"><span class="label-text">Date d'achat</span></label>
+              <input id="m-date-achat" type="date" class="input input-bordered" />
+            </div>
+          </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text">Notes</span></label>
+            <textarea id="m-notes" class="textarea textarea-bordered" rows="2"></textarea>
+          </div>
+          <div class="modal-action">
+            <button type="button" class="btn btn-ghost"
+              onclick="document.getElementById('modal-materiel').close()">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- MODAL DÉTAIL -->
+    <dialog id="modal-detail" class="modal">
+      <div class="modal-box w-full max-w-lg">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex-1 min-w-0 pr-4">
+            <h3 id="detail-article" class="font-bold text-xl"></h3>
+            <p id="detail-lien-wrap" class="hidden mt-1">
+              <a id="detail-lien" href="#" target="_blank"
+                class="link link-primary text-sm break-all">🔗 Voir le lien</a>
+            </p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="editFromDetail()" class="btn btn-ghost btn-sm">
+              ✏️ Modifier
+            </button>
+            <form method="dialog">
+              <button class="btn btn-ghost btn-sm btn-square">✕</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Badges statut + priorité -->
+        <div class="flex gap-2 mb-4">
+          <span id="detail-statut-badge" class="badge badge-lg"></span>
+          <span id="detail-priorite-badge" class="badge badge-lg badge-outline"></span>
+        </div>
+
+        <!-- Changement statut rapide -->
+        <div class="bg-base-200 rounded-box p-3 mb-4">
+          <p class="text-xs text-base-content/50 mb-2">Changer le statut</p>
+          <div class="flex gap-2">
+            <select id="detail-statut-select" class="select select-sm select-bordered flex-1">
+              <option value="a_acheter">À acheter</option>
+              <option value="achete">Acheté</option>
+              <option value="abandonne">Abandonné</option>
+            </select>
+            <input id="detail-date-achat" type="date"
+              class="input input-sm input-bordered w-36" />
+            <button onclick="applyStatut()" class="btn btn-sm btn-primary">
+              Appliquer
+            </button>
+          </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+          <div>
+            <span class="text-base-content/50">Prix estimé :</span>
+            <span id="detail-prix" class="ml-1 font-mono font-bold">—</span>
+          </div>
+          <div>
+            <span class="text-base-content/50">Date achat :</span>
+            <span id="detail-date" class="ml-1">—</span>
+          </div>
+          <div>
+            <span class="text-base-content/50">Ajouté le :</span>
+            <span id="detail-created" class="ml-1">—</span>
+          </div>
+        </div>
+
+        <div id="detail-notes-wrap" class="hidden">
+          <p class="text-xs text-base-content/50 mb-1">Notes</p>
+          <p id="detail-notes"
+            class="text-sm bg-base-200 rounded-box p-3 whitespace-pre-wrap"></p>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <script type="module">
+      import { requireAuth, logout as _logout } from "/js/auth.js";
+      import {
+        init,
+        openMaterielModal as _open,
+        submitMateriel as _submit,
+        debouncedSearch as _search,
+        applyFilters as _apply,
+        resetFilters as _reset,
+        toggleDateAchat as _toggle,
+        editFromDetail as _edit,
+        applyStatut as _applyStatut,
+      } from "/js/materiel.js";
+
+      window.logout = _logout;
+      window.openMaterielModal = _open;
+      window.submitMateriel = _submit;
+      window.debouncedSearch = _search;
+      window.applyFilters = _apply;
+      window.resetFilters = _reset;
+      window.toggleDateAchat = _toggle;
+      window.editFromDetail = _edit;
+      window.applyStatut = _applyStatut;
+
+      document.querySelectorAll("[data-page]").forEach((el) => {
+        if (el.dataset.page === "materiel") el.classList.add("btn-active");
+      });
+
+      const user = JSON.parse(localStorage.getItem("current_user") || "{}");
+      if (user.username) {
+        document.getElementById("sidebar-username").textContent = user.username;
+        document.getElementById("sidebar-role").textContent = user.role || "";
+        document.getElementById("sidebar-avatar").textContent =
+          user.username[0].toUpperCase();
+      }
+
+      requireAuth();
+      init();
+    </script>
+  </body>
+</html>

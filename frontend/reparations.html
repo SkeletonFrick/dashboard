@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Réparations — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-100 shadow lg:hidden">
+          <label for="drawer-toggle" class="btn btn-ghost">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </label>
+          <span class="text-lg font-bold ml-2">Réparations</span>
+        </div>
+
+        <!-- Contenu principal -->
+        <main class="p-4 md:p-6 flex-1">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Réparations</h1>
+            <button
+              class="btn btn-primary"
+              onclick="openRepModal()"
+            >
+              + Nouvelle réparation
+            </button>
+          </div>
+
+          <!-- Filtres -->
+          <div class="card bg-base-100 shadow mb-4">
+            <div class="card-body p-4">
+              <div class="flex flex-wrap gap-3 items-end">
+                <div class="form-control flex-1 min-w-[200px]">
+                  <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Appareil, client, marque…"
+                    class="input input-bordered input-sm"
+                    oninput="debouncedSearch()"
+                  />
+                </div>
+                <select
+                  id="filter-statut"
+                  class="select select-bordered select-sm"
+                  onchange="applyFilters()"
+                >
+                  <option value="">Tous les statuts</option>
+                  <option value="recu">Reçu</option>
+                  <option value="diagnostic_en_cours">Diagnostic</option>
+                  <option value="en_attente_accord">Attente accord</option>
+                  <option value="en_attente_pieces">Attente pièces</option>
+                  <option value="en_cours_reparation">En cours</option>
+                  <option value="pret">Prêt</option>
+                  <option value="livre">Livré</option>
+                  <option value="annule">Annulé</option>
+                </select>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  onclick="resetFilters()"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau -->
+          <div class="card bg-base-100 shadow overflow-x-auto">
+            <table class="table table-zebra w-full">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Date</th>
+                  <th>Client</th>
+                  <th>Appareil</th>
+                  <th>Statut</th>
+                  <th class="text-right">Prix</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reparations-tbody">
+                <tr>
+                  <td
+                    colspan="7"
+                    class="text-center py-8 text-base-content/50"
+                  >
+                    Chargement…
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            id="pagination"
+            class="flex items-center justify-between mt-4 text-sm text-base-content/70"
+          ></div>
+        </main>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside
+          class="bg-base-100 w-64 min-h-full shadow-lg flex flex-col"
+        >
+          <div class="p-4 border-b">
+            <span class="text-xl font-bold">AQ Réparation</span>
+          </div>
+          <nav class="flex-1 p-2 menu">
+            <li class="menu-title">Activité</li>
+            <li><a href="/index.html">Dashboard</a></li>
+            <li><a href="/reparations.html" class="active">Réparations</a></li>
+            <li><a href="/flips.html">Flips</a></li>
+            <li class="menu-title mt-2">Gestion</li>
+            <li><a href="/achats.html">Achats</a></li>
+            <li><a href="/ventes.html">Ventes</a></li>
+            <li><a href="/stock.html">Stock</a></li>
+            <li><a href="/clients.html">Clients</a></li>
+            <li><a href="/fournisseurs.html">Fournisseurs</a></li>
+            <li><a href="/materiel.html">Matériel</a></li>
+            <li class="menu-title mt-2">Finance</li>
+            <li><a href="/budget.html">Budget</a></li>
+            <li><a href="/parametres.html">Paramètres</a></li>
+          </nav>
+          <div class="p-4 border-t">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="avatar placeholder">
+                <div
+                  class="bg-primary text-primary-content rounded-full w-8"
+                >
+                  <span id="sidebar-initial">?</span>
+                </div>
+              </div>
+              <span
+                id="sidebar-username"
+                class="text-sm font-medium"
+              ></span>
+            </div>
+            <button
+              class="btn btn-ghost btn-sm w-full"
+              onclick="logout()"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         Modal création/édition réparation
+    ════════════════════════════════════════════════════════════════════════ -->
+    <dialog id="rep-modal" class="modal">
+      <div class="modal-box w-full max-w-2xl">
+        <h3 class="font-bold text-lg mb-4" id="rep-modal-title">
+          Nouvelle réparation
+        </h3>
+        <form id="rep-form" onsubmit="submitRep(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Date réception -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Date réception *</span></label
+              >
+              <input
+                type="date"
+                name="date_reception"
+                class="input input-bordered"
+                required
+              />
+            </div>
+
+            <!-- Client avec autocomplétion -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Client</span></label
+              >
+              <div class="relative">
+                <input
+                  type="text"
+                  id="client-search"
+                  placeholder="Rechercher ou créer…"
+                  class="input input-bordered w-full"
+                  oninput="onClientSearch(this.value)"
+                  autocomplete="off"
+                />
+                <input
+                  type="hidden"
+                  name="client_id"
+                  id="client-id-hidden"
+                />
+                <ul
+                  id="client-suggestions"
+                  class="absolute z-50 bg-base-100 border border-base-300
+                         rounded-box shadow w-full mt-1 hidden max-h-48 overflow-y-auto"
+                ></ul>
+              </div>
+            </div>
+
+            <!-- Téléphone -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Téléphone</span></label
+              >
+              <input
+                type="tel"
+                name="telephone"
+                class="input input-bordered"
+              />
+            </div>
+
+            <!-- Appareil -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Appareil *</span></label
+              >
+              <input
+                type="text"
+                name="appareil"
+                class="input input-bordered"
+                placeholder="Smartphone, tablette…"
+                required
+              />
+            </div>
+
+            <!-- Marque -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Marque</span></label
+              >
+              <input
+                type="text"
+                name="marque"
+                class="input input-bordered"
+                placeholder="Apple, Samsung…"
+              />
+            </div>
+
+            <!-- Modèle -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Modèle</span></label
+              >
+              <input
+                type="text"
+                name="modele"
+                class="input input-bordered"
+                placeholder="iPhone 14, Galaxy S23…"
+              />
+            </div>
+
+            <!-- Statut -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Statut</span></label
+              >
+              <select name="statut" class="select select-bordered">
+                <option value="recu">Reçu</option>
+                <option value="diagnostic_en_cours">Diagnostic en cours</option>
+                <option value="en_attente_accord">Attente accord</option>
+                <option value="en_attente_pieces">Attente pièces</option>
+                <option value="en_cours_reparation">En cours de réparation</option>
+                <option value="pret">Prêt</option>
+                <option value="livre">Livré</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+
+            <!-- Prix facturé -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Prix facturé (€)</span></label
+              >
+              <input
+                type="number"
+                name="prix_facture"
+                step="0.01"
+                min="0"
+                class="input input-bordered"
+              />
+            </div>
+
+            <!-- Acompte -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Acompte (€)</span></label
+              >
+              <input
+                type="number"
+                name="acompte"
+                step="0.01"
+                min="0"
+                class="input input-bordered"
+              />
+            </div>
+
+            <!-- Date restitution -->
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Date restitution</span></label
+              >
+              <input
+                type="date"
+                name="date_restitution"
+                class="input input-bordered"
+              />
+            </div>
+
+            <!-- Panne décrite -->
+            <div class="form-control md:col-span-2">
+              <label class="label"
+                ><span class="label-text">Panne décrite</span></label
+              >
+              <textarea
+                name="panne_decrite"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <!-- Diagnostic -->
+            <div class="form-control md:col-span-2">
+              <label class="label"
+                ><span class="label-text">Diagnostic</span></label
+              >
+              <textarea
+                name="diagnostic"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <!-- Réparation effectuée -->
+            <div class="form-control md:col-span-2">
+              <label class="label"
+                ><span class="label-text">Réparation effectuée</span></label
+              >
+              <textarea
+                name="reparation_effectuee"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-control md:col-span-2">
+              <label class="label"><span class="label-text">Notes</span></label>
+              <textarea
+                name="notes"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="document.getElementById('rep-modal').close()"
+            >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         Modal détail réparation
+    ════════════════════════════════════════════════════════════════════════ -->
+    <dialog id="rep-detail-modal" class="modal">
+      <div class="modal-box w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-start justify-between mb-4">
+          <h3 class="font-bold text-lg" id="detail-rep-title"></h3>
+          <div class="flex gap-2">
+            <button
+              class="btn btn-sm btn-ghost"
+              onclick="printRecu()"
+              title="Reçu imprimable"
+            >
+              🖨️ Reçu
+            </button>
+            <form method="dialog">
+              <button class="btn btn-sm btn-ghost">✕</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="detail-rep-body" class="space-y-6"></div>
+
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn">Fermer</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/auth.js"></script>
+    <script type="module" src="/js/reparations.js"></script>
+  </body>
+</html>

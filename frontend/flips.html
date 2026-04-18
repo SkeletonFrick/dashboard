@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flips — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+      <!-- PAGE -->
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-100 shadow lg:hidden">
+          <label for="drawer-toggle" class="btn btn-ghost btn-square">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </label>
+          <span class="text-lg font-bold ml-2">Flips</span>
+        </div>
+
+        <!-- Contenu principal -->
+        <main class="p-4 md:p-6 flex-1">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h1 class="text-2xl font-bold">Flips</h1>
+            <button
+              class="btn btn-primary btn-sm"
+              onclick="openFlipModal()"
+            >
+              + Nouveau flip
+            </button>
+          </div>
+
+          <!-- Filtres -->
+          <div class="bg-base-100 rounded-box p-4 mb-4 flex flex-wrap gap-3 items-end">
+            <div class="form-control flex-1 min-w-48">
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Nom, marque, modèle, IMEI…"
+                class="input input-bordered input-sm w-full"
+                oninput="debouncedSearch()"
+              />
+            </div>
+            <div class="form-control">
+              <select
+                id="statutFilter"
+                class="select select-bordered select-sm"
+                onchange="loadFlips()"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="a_diagnostiquer">À diagnostiquer</option>
+                <option value="en_attente_pieces">En attente pièces</option>
+                <option value="en_reparation">En réparation</option>
+                <option value="pret_a_vendre">Prêt à vendre</option>
+                <option value="en_vente">En vente</option>
+                <option value="vendu">Vendu</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+              Réinitialiser
+            </button>
+          </div>
+
+          <!-- Tableau -->
+          <div class="bg-base-100 rounded-box overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nom / Appareil</th>
+                  <th>IMEI</th>
+                  <th>Statut</th>
+                  <th class="text-right">Prix achat</th>
+                  <th class="text-right">Coût pièces</th>
+                  <th class="text-right">Prix vente</th>
+                  <th class="text-right">Marge</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="flipsTableBody">
+                <tr>
+                  <td colspan="9" class="text-center py-8 text-base-content/50">
+                    Chargement…
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            id="pagination"
+            class="flex items-center justify-between mt-4 text-sm text-base-content/70"
+          ></div>
+        </main>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl">
+          <div class="p-4 border-b border-base-200">
+            <span class="text-lg font-bold text-primary">AQ Réparation</span>
+          </div>
+          <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+            <p class="text-xs font-semibold text-base-content/50 uppercase px-2 py-1">Activité</p>
+            <a href="/" class="btn btn-ghost btn-sm w-full justify-start" data-page="index">Dashboard</a>
+            <a href="/achats.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="achats">Achats</a>
+            <a href="/ventes.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="ventes">Ventes</a>
+            <a href="/flips.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="flips">Flips</a>
+            <a href="/reparations.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="reparations">Réparations</a>
+            <p class="text-xs font-semibold text-base-content/50 uppercase px-2 py-1 mt-3">Gestion</p>
+            <a href="/stock.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="stock">Stock</a>
+            <a href="/clients.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="clients">Clients</a>
+            <a href="/fournisseurs.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="fournisseurs">Fournisseurs</a>
+            <a href="/materiel.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="materiel">Matériel</a>
+            <p class="text-xs font-semibold text-base-content/50 uppercase px-2 py-1 mt-3">Finance</p>
+            <a href="/budget.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="budget">Budget</a>
+            <a href="/parametres.html" class="btn btn-ghost btn-sm w-full justify-start" data-page="parametres">Paramètres</a>
+          </nav>
+          <div class="p-3 border-t border-base-200">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="avatar placeholder">
+                <div class="bg-primary text-primary-content rounded-full w-8">
+                  <span id="sidebarInitiale">?</span>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p id="sidebarUsername" class="text-sm font-medium truncate">…</p>
+                <p id="sidebarRole" class="text-xs text-base-content/50 truncate">…</p>
+              </div>
+            </div>
+            <button onclick="logout()" class="btn btn-ghost btn-xs w-full">
+              Déconnexion
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ── MODAL CRÉATION / ÉDITION ─────────────────────────────────────── -->
+    <dialog id="flipModal" class="modal">
+      <div class="modal-box w-11/12 max-w-2xl">
+        <h3 id="flipModalTitle" class="font-bold text-lg mb-4">Nouveau flip</h3>
+        <form id="flipForm" onsubmit="submitFlip(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Nom -->
+            <div class="form-control md:col-span-2">
+              <label class="label"><span class="label-text">Nom *</span></label>
+              <input id="fNom" name="nom" type="text" class="input input-bordered input-sm" required />
+            </div>
+            <!-- Marque / Modèle -->
+            <div class="form-control">
+              <label class="label"><span class="label-text">Marque</span></label>
+              <input id="fMarque" name="marque" type="text" class="input input-bordered input-sm" />
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Modèle</span></label>
+              <input id="fModele" name="modele" type="text" class="input input-bordered input-sm" />
+            </div>
+            <!-- IMEI -->
+            <div class="form-control">
+              <label class="label"><span class="label-text">IMEI / N° série</span></label>
+              <input id="fImei" name="imei" type="text" class="input input-bordered input-sm" />
+            </div>
+            <!-- État initial -->
+            <div class="form-control">
+              <label class="label"><span class="label-text">État initial</span></label>
+              <input id="fEtatInitial" name="etat_initial" type="text" placeholder="Ex: écran cassé…" class="input input-bordered input-sm" />
+            </div>
+            <!-- Achat lié -->
+            <div class="form-control">
+              <label class="label"><span class="label-text">Achat lié</span></label>
+              <select id="fAchatId" name="achat_id" class="select select-bordered select-sm">
+                <option value="">— Aucun —</option>
+              </select>
+            </div>
+            <!-- Prix achat manuel -->
+            <div class="form-control" id="prixAchatField">
+              <label class="label"><span class="label-text">Prix d'achat (€)</span></label>
+              <input id="fPrixAchat" name="prix_achat" type="number" step="0.01" min="0" class="input input-bordered input-sm" />
+            </div>
+            <!-- Statut -->
+            <div class="form-control">
+              <label class="label"><span class="label-text">Statut</span></label>
+              <select id="fStatut" name="statut" class="select select-bordered select-sm">
+                <option value="a_diagnostiquer">À diagnostiquer</option>
+                <option value="en_attente_pieces">En attente pièces</option>
+                <option value="en_reparation">En réparation</option>
+                <option value="pret_a_vendre">Prêt à vendre</option>
+                <option value="en_vente">En vente</option>
+                <option value="vendu">Vendu</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+            <!-- Notes -->
+            <div class="form-control md:col-span-2">
+              <label class="label"><span class="label-text">Notes</span></label>
+              <textarea id="fNotes" name="notes" class="textarea textarea-bordered textarea-sm" rows="2"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-action mt-4">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="flipModal.close()">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>Fermer</button></form>
+    </dialog>
+
+    <!-- ── MODAL DÉTAIL ─────────────────────────────────────────────────── -->
+    <dialog id="detailModal" class="modal">
+      <div class="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <h3 id="detailNom" class="font-bold text-xl"></h3>
+            <p id="detailSub" class="text-sm text-base-content/60 mt-1"></p>
+          </div>
+          <div class="flex gap-2 flex-wrap justify-end">
+            <button
+              class="btn btn-ghost btn-sm"
+              onclick="openFlipModal(STATE.detailId)"
+            >
+              Modifier
+            </button>
+            <form method="dialog"><button class="btn btn-ghost btn-sm">Fermer</button></form>
+          </div>
+        </div>
+
+        <!-- Infos + stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div class="stat bg-base-200 rounded-box p-3">
+            <div class="stat-title text-xs">Prix achat</div>
+            <div id="detailPrixAchat" class="stat-value text-base"></div>
+          </div>
+          <div class="stat bg-base-200 rounded-box p-3">
+            <div class="stat-title text-xs">Coût pièces</div>
+            <div id="detailCoutPieces" class="stat-value text-base"></div>
+          </div>
+          <div class="stat bg-base-200 rounded-box p-3">
+            <div class="stat-title text-xs">Prix vente</div>
+            <div id="detailPrixVente" class="stat-value text-base"></div>
+          </div>
+          <div class="stat bg-base-200 rounded-box p-3">
+            <div class="stat-title text-xs">Marge nette</div>
+            <div id="detailMarge" class="stat-value text-base"></div>
+          </div>
+        </div>
+
+        <!-- Changer statut rapide -->
+        <div class="bg-base-200 rounded-box p-3 mb-4 flex flex-wrap items-center gap-3">
+          <span class="text-sm font-medium">Statut :</span>
+          <span id="detailStatutBadge"></span>
+          <select id="detailStatutSelect" class="select select-bordered select-xs">
+            <option value="a_diagnostiquer">À diagnostiquer</option>
+            <option value="en_attente_pieces">En attente pièces</option>
+            <option value="en_reparation">En réparation</option>
+            <option value="pret_a_vendre">Prêt à vendre</option>
+            <option value="en_vente">En vente</option>
+            <option value="vendu">Vendu</option>
+            <option value="annule">Annulé</option>
+          </select>
+          <button class="btn btn-primary btn-xs" onclick="changeStatut()">
+            Appliquer
+          </button>
+        </div>
+
+        <!-- Pièces utilisées -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-semibold text-sm">Pièces utilisées</h4>
+          </div>
+          <table class="table table-xs w-full bg-base-200 rounded-box">
+            <thead>
+              <tr>
+                <th>Article stock</th>
+                <th class="text-right">Qté</th>
+                <th class="text-right">Prix unit.</th>
+                <th class="text-right">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="piecesTableBody">
+              <tr><td colspan="5" class="text-center text-base-content/40 py-3">Aucune pièce</td></tr>
+            </tbody>
+          </table>
+
+          <!-- Ajout pièce -->
+          <div class="mt-2 flex flex-wrap gap-2 items-end bg-base-300 rounded-box p-3">
+            <div class="form-control flex-1 min-w-32">
+              <label class="label py-0"><span class="label-text text-xs">Article stock</span></label>
+              <select id="pieceStockSelect" class="select select-bordered select-xs">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+            <div class="form-control w-20">
+              <label class="label py-0"><span class="label-text text-xs">Qté</span></label>
+              <input id="pieceQte" type="number" min="0.01" step="0.01" value="1" class="input input-bordered input-xs" />
+            </div>
+            <div class="form-control w-24">
+              <label class="label py-0"><span class="label-text text-xs">Prix unit. (€)</span></label>
+              <input id="piecePrix" type="number" min="0" step="0.01" placeholder="auto" class="input input-bordered input-xs" />
+            </div>
+            <button class="btn btn-success btn-xs" onclick="addPiece()">
+              + Ajouter
+            </button>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-semibold text-sm">Photos</h4>
+          </div>
+          <div id="photosGrid" class="flex flex-wrap gap-2 mb-2"></div>
+          <div class="flex gap-2 items-center">
+            <input id="photoInput" type="file" accept="image/*" class="file-input file-input-bordered file-input-xs flex-1" />
+            <button class="btn btn-ghost btn-xs" onclick="uploadPhoto()">Envoyer</button>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="bg-base-200 rounded-box p-3 text-sm">
+          <span class="font-medium">Notes : </span>
+          <span id="detailNotes" class="text-base-content/70">—</span>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>Fermer</button></form>
+    </dialog>
+
+    <script type="module" src="/static/js/auth.js"></script>
+    <script type="module" src="/static/js/flips.js"></script>
+  </body>
+</html>

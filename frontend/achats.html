@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Achats — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <!-- DRAWER (copie exacte du layout index.html) -->
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- NAVBAR MOBILE -->
+        <div class="navbar bg-base-100 shadow lg:hidden">
+          <label for="drawer-toggle" class="btn btn-ghost">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </label>
+          <span class="font-bold text-lg ml-2">AQ Réparation</span>
+        </div>
+
+        <!-- CONTENU PRINCIPAL -->
+        <main class="p-4 md:p-6 flex-1">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Achats</h1>
+            <div class="flex gap-2">
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="openLotModal()"
+              >
+                + Lot
+              </button>
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="openAchatModal()"
+              >
+                + Achat
+              </button>
+            </div>
+          </div>
+
+          <!-- FILTRES -->
+          <div class="card bg-base-100 shadow mb-4">
+            <div class="card-body py-3">
+              <div class="flex flex-wrap gap-3 items-end">
+                <div class="form-control flex-1 min-w-[200px]">
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Rechercher…"
+                    class="input input-bordered input-sm w-full"
+                    oninput="debouncedSearch()"
+                  />
+                </div>
+                <div class="form-control">
+                  <select
+                    id="filter-type"
+                    class="select select-bordered select-sm"
+                    onchange="loadAchats()"
+                  >
+                    <option value="">Tous les types</option>
+                    <option value="piece">Pièce</option>
+                    <option value="appareil_flip">Appareil (flip)</option>
+                    <option value="appareil_revente">
+                      Appareil (revente)
+                    </option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  onclick="resetFilters()"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLEAU -->
+          <div class="card bg-base-100 shadow">
+            <div class="card-body p-0">
+              <div class="overflow-x-auto">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Nom</th>
+                      <th>Type</th>
+                      <th>Qté</th>
+                      <th>Prix</th>
+                      <th>Fournisseur</th>
+                      <th>Stock</th>
+                      <th class="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="achats-tbody"></tbody>
+                </table>
+              </div>
+              <!-- PAGINATION -->
+              <div
+                id="pagination"
+                class="flex justify-between items-center px-4 py-3 border-t"
+              >
+                <span id="pagination-info" class="text-sm text-base-content/60"
+                  ></span
+                >
+                <div class="join">
+                  <button
+                    id="btn-prev"
+                    class="join-item btn btn-sm"
+                    onclick="changePage(-1)"
+                  >
+                    «
+                  </button>
+                  <button
+                    id="btn-next"
+                    class="join-item btn btn-sm"
+                    onclick="changePage(1)"
+                  >
+                    »
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <!-- SIDEBAR (identique index.html) -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside
+          class="bg-base-100 w-64 min-h-full flex flex-col shadow-lg"
+        >
+          <div class="p-4 border-b">
+            <span class="font-bold text-xl">🔧 AQ Réparation</span>
+          </div>
+          <nav class="flex-1 p-3 space-y-1 overflow-y-auto" id="sidebar-nav">
+            <!-- injecté par app.js -->
+          </nav>
+          <div class="p-3 border-t">
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="avatar placeholder"
+              >
+                <div
+                  class="bg-primary text-primary-content rounded-full w-8"
+                >
+                  <span id="user-initial">?</span>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p
+                  id="user-name"
+                  class="text-sm font-medium truncate"
+                ></p>
+                <p
+                  id="user-role"
+                  class="text-xs text-base-content/60"
+                ></p>
+              </div>
+            </div>
+            <button
+              class="btn btn-ghost btn-sm w-full justify-start"
+              onclick="logout()"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- MODAL ACHAT -->
+    <dialog id="modal-achat" class="modal">
+      <div class="modal-box w-11/12 max-w-2xl">
+        <h3 class="font-bold text-lg mb-4" id="modal-achat-title">
+          Nouvel achat
+        </h3>
+        <form id="form-achat" onsubmit="submitAchat(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Date *</span></label>
+              <input
+                type="date"
+                name="date"
+                class="input input-bordered"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Type *</span></label
+              >
+              <select
+                name="type_achat"
+                class="select select-bordered"
+                required
+                onchange="onTypeChange(this)"
+              >
+                <option value="">— Choisir —</option>
+                <option value="piece">Pièce</option>
+                <option value="appareil_flip">Appareil (flip)</option>
+                <option value="appareil_revente">Appareil (revente)</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+            <div class="form-control md:col-span-2">
+              <label class="label"
+                ><span class="label-text">Nom / description *</span></label
+              >
+              <input
+                type="text"
+                name="nom"
+                class="input input-bordered"
+                placeholder="Ex: Écran iPhone 13, iPhone 12 64Go…"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Prix (€) *</span></label
+              >
+              <input
+                type="number"
+                name="prix"
+                class="input input-bordered"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Quantité</span></label
+              >
+              <input
+                type="number"
+                name="qte"
+                class="input input-bordered"
+                min="1"
+                value="1"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Fournisseur</span></label
+              >
+              <select
+                name="fournisseur_id"
+                id="select-fournisseur"
+                class="select select-bordered"
+              >
+                <option value="">— Aucun —</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Plateforme</span></label
+              >
+              <select
+                name="plateforme_id"
+                id="select-plateforme"
+                class="select select-bordered"
+              >
+                <option value="">— Aucune —</option>
+              </select>
+            </div>
+            <div class="form-control md:col-span-2">
+              <label class="label"
+                ><span class="label-text">Notes</span></label
+              >
+              <textarea
+                name="notes"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+            <!-- Champ visible seulement pour type=piece -->
+            <div
+              class="form-control md:col-span-2 hidden"
+              id="field-stock-auto"
+            >
+              <label class="label cursor-pointer justify-start gap-3">
+                <input
+                  type="checkbox"
+                  name="ajout_stock_auto"
+                  class="checkbox checkbox-primary"
+                  checked
+                />
+                <span class="label-text"
+                  >Ajouter automatiquement au stock</span
+                >
+              </label>
+            </div>
+          </div>
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="closeAchatModal()"
+            >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- MODAL DÉTAIL -->
+    <dialog id="modal-detail" class="modal">
+      <div class="modal-box w-11/12 max-w-3xl">
+        <h3 class="font-bold text-lg mb-4" id="detail-title">Détail achat</h3>
+        <div id="detail-content"></div>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn">Fermer</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- MODAL LOT -->
+    <dialog id="modal-lot" class="modal">
+      <div class="modal-box w-11/12 max-w-xl">
+        <h3 class="font-bold text-lg mb-4">Créer un lot</h3>
+        <form id="form-lot" onsubmit="submitLot(event)">
+          <div class="grid grid-cols-1 gap-4">
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Nom du lot *</span></label
+              >
+              <input
+                type="text"
+                name="nom_lot"
+                class="input input-bordered"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Date *</span></label
+              >
+              <input
+                type="date"
+                name="date"
+                class="input input-bordered"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Prix total (€) *</span></label
+              >
+              <input
+                type="number"
+                name="prix_total"
+                class="input input-bordered"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label"
+                ><span class="label-text">Plateforme</span></label
+              >
+              <select
+                name="plateforme_id"
+                id="select-plateforme-lot"
+                class="select select-bordered"
+              >
+                <option value="">— Aucune —</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Notes</span></label>
+              <textarea
+                name="notes"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="document.getElementById('modal-lot').close()"
+            >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">Créer le lot</button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/auth.js"></script>
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/achats.js"></script>
+  </body>
+</html>

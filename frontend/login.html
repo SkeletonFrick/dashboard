@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="min-h-screen flex items-center justify-center bg-base-200">
+    <div class="card w-full max-w-sm bg-base-100 shadow-xl">
+      <div class="card-body gap-4">
+        <!-- En-tête -->
+        <div class="text-center mb-2">
+          <h1 class="text-2xl font-bold tracking-tight">🔧 AQ Réparation</h1>
+          <p class="text-base-content/60 text-sm mt-1">
+            Connectez-vous pour continuer
+          </p>
+        </div>
+
+        <!-- Alerte erreur -->
+        <div id="alert" class="alert alert-error hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 shrink-0"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9v4h2V9H9zm0-4v2h2V5H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span id="alert-msg"></span>
+        </div>
+
+        <!-- Formulaire -->
+        <form id="login-form" class="flex flex-col gap-3">
+          <label class="form-control">
+            <div class="label">
+              <span class="label-text">Nom d'utilisateur</span>
+            </div>
+            <input
+              id="username"
+              type="text"
+              placeholder="admin"
+              class="input input-bordered"
+              autocomplete="username"
+              required
+            />
+          </label>
+
+          <label class="form-control">
+            <div class="label">
+              <span class="label-text">Mot de passe</span>
+            </div>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              class="input input-bordered"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+
+          <button id="submit-btn" type="submit" class="btn btn-primary mt-2">
+            Se connecter
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+      // Si déjà connecté → rediriger
+      if (localStorage.getItem("token")) {
+        window.location.replace("/index.html");
+      }
+
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("submit-btn");
+          const alert = document.getElementById("alert");
+          const alertMsg = document.getElementById("alert-msg");
+
+          btn.classList.add("loading");
+          btn.disabled = true;
+          alert.classList.add("hidden");
+
+          const ok = await login(
+            document.getElementById("username").value,
+            document.getElementById("password").value
+          );
+
+          if (!ok) {
+            alertMsg.textContent =
+              authError || "Identifiants invalides. Réessayez.";
+            alert.classList.remove("hidden");
+            btn.classList.remove("loading");
+            btn.disabled = false;
+          }
+          // Si ok, auth.js redirige vers /index.html
+        });
+    </script>
+  </body>
+</html>

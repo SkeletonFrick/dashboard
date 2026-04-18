@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ventes — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-100 shadow lg:hidden">
+          <label for="drawer-toggle" class="btn btn-ghost">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </label>
+          <span class="text-lg font-bold ml-2">Ventes</span>
+        </div>
+
+        <main class="p-4 md:p-6 flex-1">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Ventes</h1>
+            <button class="btn btn-primary" onclick="openVenteModal()">
+              + Nouvelle vente
+            </button>
+          </div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="stat bg-base-100 rounded-box shadow p-4">
+              <div class="stat-title text-xs">CA total</div>
+              <div class="stat-value text-lg" id="stat-ca">—</div>
+            </div>
+            <div class="stat bg-base-100 rounded-box shadow p-4">
+              <div class="stat-title text-xs">Nb ventes</div>
+              <div class="stat-value text-lg" id="stat-nb">—</div>
+            </div>
+            <div class="stat bg-base-100 rounded-box shadow p-4 col-span-2">
+              <div class="stat-title text-xs mb-1">Par plateforme</div>
+              <div id="stat-plateformes" class="flex flex-wrap gap-1"></div>
+            </div>
+          </div>
+
+          <!-- Filtres -->
+          <div class="card bg-base-100 shadow mb-4">
+            <div class="card-body p-4">
+              <div class="flex flex-wrap gap-3 items-end">
+                <div class="form-control flex-1 min-w-[200px]">
+                  <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Nom de l'article…"
+                    class="input input-bordered input-sm"
+                    oninput="debouncedSearch()"
+                  />
+                </div>
+                <select
+                  id="filter-categorie"
+                  class="select select-bordered select-sm"
+                  onchange="applyFilters()"
+                >
+                  <option value="">Toutes catégories</option>
+                </select>
+                <select
+                  id="filter-plateforme"
+                  class="select select-bordered select-sm"
+                  onchange="applyFilters()"
+                >
+                  <option value="">Toutes plateformes</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau -->
+          <div class="card bg-base-100 shadow overflow-x-auto">
+            <table class="table table-zebra w-full">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Article</th>
+                  <th>Catégorie</th>
+                  <th>Plateforme</th>
+                  <th>Source</th>
+                  <th class="text-right">Prix vente</th>
+                  <th class="text-right">Marge</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ventes-tbody">
+                <tr>
+                  <td
+                    colspan="8"
+                    class="text-center py-8 text-base-content/50"
+                  >
+                    Chargement…
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            id="pagination"
+            class="flex items-center justify-between mt-4
+                   text-sm text-base-content/70"
+          ></div>
+        </main>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside class="bg-base-100 w-64 min-h-full shadow-lg flex flex-col">
+          <div class="p-4 border-b">
+            <span class="text-xl font-bold">AQ Réparation</span>
+          </div>
+          <nav class="flex-1 p-2 menu">
+            <li class="menu-title">Activité</li>
+            <li><a href="/index.html">Dashboard</a></li>
+            <li><a href="/reparations.html">Réparations</a></li>
+            <li><a href="/flips.html">Flips</a></li>
+            <li class="menu-title mt-2">Gestion</li>
+            <li><a href="/achats.html">Achats</a></li>
+            <li><a href="/ventes.html" class="active">Ventes</a></li>
+            <li><a href="/stock.html">Stock</a></li>
+            <li><a href="/clients.html">Clients</a></li>
+            <li><a href="/fournisseurs.html">Fournisseurs</a></li>
+            <li><a href="/materiel.html">Matériel</a></li>
+            <li class="menu-title mt-2">Finance</li>
+            <li><a href="/budget.html">Budget</a></li>
+            <li><a href="/parametres.html">Paramètres</a></li>
+          </nav>
+          <div class="p-4 border-t">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="avatar placeholder">
+                <div
+                  class="bg-primary text-primary-content rounded-full w-8"
+                >
+                  <span id="sidebar-initial">?</span>
+                </div>
+              </div>
+              <span id="sidebar-username" class="text-sm font-medium"></span>
+            </div>
+            <button
+              class="btn btn-ghost btn-sm w-full"
+              onclick="logout()"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Modal création/édition -->
+    <dialog id="vente-modal" class="modal">
+      <div class="modal-box w-full max-w-xl">
+        <h3 class="font-bold text-lg mb-4" id="vente-modal-title">
+          Nouvelle vente
+        </h3>
+        <form id="vente-form" onsubmit="submitVente(event)">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Date *</span>
+              </label>
+              <input
+                type="date"
+                name="date"
+                class="input input-bordered"
+                required
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Prix de vente (€) *</span>
+              </label>
+              <input
+                type="number"
+                name="prix_vente"
+                step="0.01"
+                min="0"
+                class="input input-bordered"
+                required
+              />
+            </div>
+
+            <div class="form-control md:col-span-2">
+              <label class="label">
+                <span class="label-text">Nom de l'article *</span>
+              </label>
+              <input
+                type="text"
+                name="nom"
+                class="input input-bordered"
+                required
+              />
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Catégorie</span>
+              </label>
+              <select name="categorie" class="select select-bordered">
+                <option value="">— Aucune —</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Plateforme</span>
+              </label>
+              <select name="plateforme" class="select select-bordered">
+                <option value="">— Aucune —</option>
+              </select>
+            </div>
+
+            <!-- Source optionnelle -->
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Achat lié (optionnel)</span>
+              </label>
+              <select name="achat_id" class="select select-bordered"
+                id="select-achat" onchange="onSourceChange()">
+                <option value="">— Aucun —</option>
+              </select>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text">Flip lié (optionnel)</span>
+              </label>
+              <select name="flip_id" class="select select-bordered"
+                id="select-flip" onchange="onSourceChange()">
+                <option value="">— Aucun —</option>
+              </select>
+            </div>
+
+            <div class="form-control md:col-span-2">
+              <label class="label">
+                <span class="label-text">Notes</span>
+              </label>
+              <textarea
+                name="notes"
+                class="textarea textarea-bordered"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Avertissement double source -->
+          <div
+            id="source-warning"
+            class="alert alert-warning mt-3 hidden text-sm py-2"
+          >
+            ⚠️ Sélectionnez un achat <em>ou</em> un flip, pas les deux.
+          </div>
+
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="document.getElementById('vente-modal').close()"
+            >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- Modal détail -->
+    <dialog id="vente-detail-modal" class="modal">
+      <div class="modal-box w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-lg" id="detail-vente-title"></h3>
+          <form method="dialog">
+            <button class="btn btn-sm btn-ghost">✕</button>
+          </form>
+        </div>
+        <div id="detail-vente-body" class="space-y-4"></div>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn">Fermer</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/auth.js"></script>
+    <script type="module" src="/js/ventes.js"></script>
+  </body>
+</html>

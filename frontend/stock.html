@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock — AQ Réparation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <div class="drawer lg:drawer-open">
+      <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar mobile -->
+        <div class="navbar bg-base-100 lg:hidden shadow">
+          <label
+            for="drawer-toggle"
+            class="btn btn-ghost drawer-button"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </label>
+          <span class="text-lg font-bold ml-2">Stock</span>
+        </div>
+
+        <!-- Contenu principal -->
+        <main class="p-4 lg:p-6 flex-1">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">Stock de pièces</h1>
+            <button
+              class="btn btn-primary btn-sm"
+              onclick="openArticleModal()"
+            >
+              + Ajouter article
+            </button>
+          </div>
+
+          <!-- Alertes stock -->
+          <div id="alertes-section" class="mb-4 hidden">
+            <div class="alert alert-warning shadow mb-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82
+                     18a2 2 0 001.71 3h16.94a2 2 0
+                     001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                />
+              </svg>
+              <span
+                ><strong id="alerte-count">0</strong> article(s) en
+                dessous du seuil minimal</span
+              >
+              <button
+                class="btn btn-xs btn-ghost"
+                onclick="toggleAlerteFilter()"
+                id="btn-alerte-filter"
+              >
+                Voir uniquement
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtres -->
+          <div
+            class="bg-base-100 rounded-box p-4 mb-4 flex flex-wrap gap-3 items-end"
+          >
+            <div class="form-control flex-1 min-w-[180px]">
+              <label class="label label-text">Recherche</label>
+              <input
+                type="text"
+                id="filter-search"
+                class="input input-bordered input-sm"
+                placeholder="Nom article…"
+                oninput="debouncedSearch()"
+              />
+            </div>
+            <div class="form-control min-w-[160px]">
+              <label class="label label-text">Catégorie</label>
+              <select
+                id="filter-categorie"
+                class="select select-bordered select-sm"
+                onchange="loadStock()"
+              >
+                <option value="">Toutes</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label label-text">&nbsp;</label>
+              <button
+                class="btn btn-ghost btn-sm"
+                onclick="resetFilters()"
+              >
+                Réinitialiser
+              </button>
+            </div>
+          </div>
+
+          <!-- Tableau -->
+          <div class="overflow-x-auto bg-base-100 rounded-box">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Catégorie</th>
+                  <th class="text-center">Quantité</th>
+                  <th class="text-center">Seuil</th>
+                  <th>Fournisseur</th>
+                  <th>Statut</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="stock-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            class="flex items-center justify-between mt-4 text-sm text-base-content/60"
+          >
+            <span id="pagination-info"></span>
+            <div class="join">
+              <button
+                class="join-item btn btn-sm"
+                id="btn-prev"
+                onclick="changePage(-1)"
+              >
+                «
+              </button>
+              <button
+                class="join-item btn btn-sm"
+                id="btn-next"
+                onclick="changePage(1)"
+              >
+                »
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <!-- Sidebar (même structure que index.html) -->
+      <div class="drawer-side z-40">
+        <label for="drawer-toggle" class="drawer-overlay"></label>
+        <aside
+          class="bg-base-100 w-64 min-h-full flex flex-col shadow-xl"
+        >
+          <div class="p-4 text-xl font-bold border-b border-base-300">
+            AQ Réparation
+          </div>
+          <nav class="flex-1 p-2">
+            <ul class="menu menu-sm gap-1">
+              <li class="menu-title">Activité</li>
+              <li>
+                <a href="/index.html" data-page="index">Dashboard</a>
+              </li>
+              <li>
+                <a href="/reparations.html" data-page="reparations"
+                  >Réparations</a
+                >
+              </li>
+              <li>
+                <a href="/flips.html" data-page="flips">Flips</a>
+              </li>
+              <li class="menu-title mt-2">Gestion</li>
+              <li>
+                <a href="/achats.html" data-page="achats">Achats</a>
+              </li>
+              <li>
+                <a href="/ventes.html" data-page="ventes">Ventes</a>
+              </li>
+              <li>
+                <a href="/stock.html" data-page="stock">Stock</a>
+              </li>
+              <li>
+                <a href="/clients.html" data-page="clients">Clients</a>
+              </li>
+              <li>
+                <a href="/fournisseurs.html" data-page="fournisseurs"
+                  >Fournisseurs</a
+                >
+              </li>
+              <li>
+                <a href="/materiel.html" data-page="materiel"
+                  >Matériel</a
+                >
+              </li>
+              <li class="menu-title mt-2">Finance</li>
+              <li>
+                <a href="/budget.html" data-page="budget">Budget</a>
+              </li>
+              <li>
+                <a href="/parametres.html" data-page="parametres"
+                  >Paramètres</a
+                >
+              </li>
+            </ul>
+          </nav>
+          <div
+            class="p-4 border-t border-base-300 flex items-center gap-3"
+          >
+            <div
+              class="avatar placeholder"
+            >
+              <div
+                class="bg-primary text-primary-content rounded-full w-8"
+              >
+                <span id="user-initial">?</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div
+                id="user-name"
+                class="text-sm font-semibold truncate"
+              ></div>
+              <div
+                id="user-role"
+                class="text-xs text-base-content/50"
+              ></div>
+            </div>
+            <button
+              class="btn btn-ghost btn-xs"
+              onclick="logout()"
+            >
+              Quitter
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Modal article (création / édition) -->
+    <dialog id="modal-article" class="modal">
+      <div class="modal-box w-full max-w-lg">
+        <h3 class="font-bold text-lg mb-4" id="modal-article-title">
+          Nouvel article
+        </h3>
+        <form id="form-article" onsubmit="submitArticle(event)">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="form-control sm:col-span-2">
+              <label class="label label-text">Nom *</label>
+              <input
+                type="text"
+                name="nom"
+                class="input input-bordered"
+                required
+              />
+            </div>
+            <div class="form-control">
+              <label class="label label-text">Catégorie</label>
+              <select name="categorie" class="select select-bordered">
+                <option value="piece">Pièce</option>
+                <option value="accessoire">Accessoire</option>
+                <option value="consommable">Consommable</option>
+                <option value="outillage">Outillage</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label label-text">Fournisseur</label>
+              <select
+                name="fournisseur_id"
+                id="form-fournisseur"
+                class="select select-bordered"
+              >
+                <option value="">— aucun —</option>
+              </select>
+            </div>
+            <div class="form-control">
+              <label class="label label-text">Quantité initiale</label>
+              <input
+                type="number"
+                name="quantite"
+                class="input input-bordered"
+                min="0"
+                value="0"
+              />
+            </div>
+            <div class="form-control">
+              <label class="label label-text">Seuil minimal</label>
+              <input
+                type="number"
+                name="stock_minimal"
+                class="input input-bordered"
+                min="0"
+                value="1"
+              />
+            </div>
+          </div>
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="document.getElementById('modal-article').close()"
+            >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>Fermer</button>
+      </form>
+    </dialog>
+
+    <!-- Modal détail / mouvements -->
+    <dialog id="modal-detail" class="modal">
+      <div class="modal-box w-full max-w-2xl">
+        <h3 class="font-bold text-lg mb-4" id="detail-title">
+          Détail article
+        </h3>
+        <div id="detail-content"></div>
+        <div class="divider">Mouvements</div>
+        <div id="mouvements-content"></div>
+        <!-- Ajout mouvement manuel -->
+        <div class="divider">Mouvement manuel</div>
+        <form
+          id="form-mouvement"
+          onsubmit="submitMouvement(event)"
+          class="grid grid-cols-2 gap-3"
+        >
+          <input type="hidden" id="mouvement-stock-id" />
+          <div class="form-control">
+            <label class="label label-text">Type</label>
+            <select
+              name="type_mouvement"
+              class="select select-bordered select-sm"
+            >
+              <option value="entree">Entrée</option>
+              <option value="sortie">Sortie</option>
+              <option value="correction">Correction inventaire</option>
+            </select>
+          </div>
+          <div class="form-control">
+            <label class="label label-text">Quantité</label>
+            <input
+              type="number"
+              name="quantite"
+              class="input input-bordered input-sm"
+              min="0"
+              required
+            />
+          </div>
+          <div class="form-control col-span-2">
+            <label class="label label-text">Motif</label>
+            <input
+              type="text"
+              name="motif"
+              class="input input-bordered input-sm"
+              placeholder="Optionnel"
+            />
+          </div>
+          <div class="col-span-2 flex justify-end">
+            <button type="submit" class="btn btn-sm btn-accent">
+              Appliquer mouvement
+            </button>
+          </div>
+        </form>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-ghost">Fermer</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>Fermer</button>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/auth.js"></script>
+    <script type="module" src="/js/app.js"></script>
+    <script type="module" src="/js/stock.js"></script>
+  </body>
+</html>
